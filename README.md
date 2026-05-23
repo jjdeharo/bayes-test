@@ -155,15 +155,15 @@ Antes de aplicar el criterio de categoría, el pool de candidatas se mezcla alea
 
 ## Banco de preguntas
 
-El banco contiene **60 preguntas** de cultura general, repartidas equitativamente:
+El banco contiene **90 preguntas** de cultura general, repartidas equitativamente:
 
-- 20 preguntas de dificultad **fácil**
-- 20 preguntas de dificultad **media**
-- 20 preguntas de dificultad **difícil**
+- 30 preguntas de dificultad **fácil**
+- 30 preguntas de dificultad **media**
+- 30 preguntas de dificultad **difícil**
 
-Las categorías incluyen: Geografía, Historia, Ciencia, Arte, Literatura, Filosofía, Matemáticas, Cultura y Deportes.
+Las categorías incluyen: Geografía, Historia, Ciencia, Arte, Literatura, Filosofía, Matemáticas, Cultura y Deportes. Las preguntas están diseñadas para ser accesibles a cualquier persona con educación general independientemente de su país de origen, evitando referencias a conocimientos específicos de una sola nación.
 
-Cada sesión utiliza **10 preguntas**, seleccionadas adaptativamente. La combinación de 60 preguntas disponibles, selección aleatoria y adaptación al nivel hace que dos sesiones rara vez compartan la misma secuencia.
+Cada sesión utiliza entre 6 y $MAX\_Q$ preguntas, seleccionadas adaptativamente. La combinación de 90 preguntas disponibles, selección aleatoria y adaptación al nivel hace que dos sesiones rara vez compartan la misma secuencia.
 
 Las preguntas están definidas en el archivo `questions.js`, separado de la lógica del sistema, lo que facilita ampliar o modificar el banco sin tocar el algoritmo.
 

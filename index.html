@@ -556,7 +556,8 @@ function selectNext() {
   for (const diff of order) {
     const pool = QUESTIONS.filter(q => q.diff === diff && !askedIds.has(q.id));
     if (!pool.length) continue;
-    // prefer under-represented category
+    // shuffle first, then prefer under-represented category (ties broken randomly)
+    pool.sort(() => Math.random() - 0.5);
     const catCount = {};
     history.forEach(h => { catCount[h.cat] = (catCount[h.cat] || 0) + 1; });
     pool.sort((a, b) => (catCount[a.cat] || 0) - (catCount[b.cat] || 0));
@@ -702,8 +703,9 @@ function handleAnswer(chosen) {
 function startQuiz() {
   resetState();
   showScreen('screen-quiz');
-  // always start with a medium question
-  const first = QUESTIONS.find(q => q.diff === 1);
+  // start with a random medium question
+  const mediums = QUESTIONS.filter(q => q.diff === 1);
+  const first = mediums[Math.floor(Math.random() * mediums.length)];
   renderQuestion(first);
 }
 

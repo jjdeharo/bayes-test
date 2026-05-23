@@ -103,9 +103,20 @@ El sistema mapea el nivel estimado (el de mayor probabilidad posterior) con la d
 
 Si no quedan preguntas disponibles en la dificultad objetivo, el sistema busca en dificultades adyacentes.
 
+### Condición de parada por certeza
+
+El test no tiene un número fijo de preguntas. En su lugar, finaliza cuando se cumple **cualquiera** de estas condiciones:
+
+1. La confianza en el nivel MAP supera el **umbral de certeza** ($\geq 80\,\%$), siempre que se hayan respondido al menos **6 preguntas** (mínimo para evitar conclusiones prematuras).
+2. Se alcanza el **máximo de 15 preguntas** como tope de seguridad.
+
+Esto tiene una consecuencia importante: un alumno que solo acierta preguntas fáciles tarde más en terminar, porque las preguntas fáciles discriminan poco entre niveles (verosimilitudes $0{,}85$, $0{,}93$ y $0{,}98$, muy próximas entre sí). La distribución converge lentamente y el sistema sigue pidiendo más evidencia. Un alumno claramente avanzado, en cambio, puede terminar en 7–8 preguntas si acierta varias difíciles seguidas.
+
+La barra de progreso refleja la **certeza acumulada** hacia el umbral del 80 %, no el número de preguntas completadas, de modo que el alumno puede ver en todo momento cuánto falta para que el sistema tenga suficiente confianza.
+
 ### Mecanismo de recuperación
 
-Las preguntas fáciles tienen verosimilitudes muy próximas entre sí para los tres niveles ($0{,}85$, $0{,}93$ y $0{,}98$), por lo que aportan poca información discriminatoria. Un alumno que falle la primera pregunta media puede quedar atrapado recibiendo solo preguntas fáciles, sin posibilidad real de recuperar el nivel estimado.
+Las preguntas fáciles aportan poca información discriminatoria. Un alumno que falle la primera pregunta media puede quedar atrapado recibiendo solo preguntas fáciles, sin posibilidad real de que la distribución se desplace hacia niveles superiores.
 
 Para evitarlo, el sistema cuenta las preguntas fáciles **consecutivas** enviadas. Tras **2 seguidas**, fuerza automáticamente una pregunta de dificultad media como sondeo de recuperación:
 

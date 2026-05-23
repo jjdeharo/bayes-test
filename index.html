@@ -330,7 +330,7 @@
         <div class="feature-grid">
           <div class="feature-item"><div class="fi">🎯</div><div class="fl">Adaptativo</div></div>
           <div class="feature-item"><div class="fi">📊</div><div class="fl">Probabilístico</div></div>
-          <div class="feature-item"><div class="fi">⚡</div><div class="fl">10 preguntas</div></div>
+          <div class="feature-item"><div class="fi">⚡</div><div class="fl">6–15 preguntas</div></div>
         </div>
         <button class="btn btn-primary" onclick="startQuiz()">▶ Comenzar el test</button>
       </div>
@@ -360,14 +360,14 @@
 
     <div class="progress-section">
       <div class="progress-header">
-        <span id="q-counter">Pregunta 1 de 10</span>
+        <span id="q-counter">Pregunta 1 · máx. 15</span>
         <span id="q-score">0 correctas</span>
       </div>
       <div class="prog-bg">
         <div class="prog-fill" id="prog-fill" style="width:0%"></div>
       </div>
-      <div style="text-align:right; font-size:0.72rem; color:var(--muted); margin-top:0.3rem;">
-        Banco: 60 preguntas disponibles
+      <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); margin-top:0.3rem;">
+        <span id="certainty-note">Certeza: 33% · para al superar el 80% (mín. 6 preguntas)</span>
       </div>
     </div>
 
@@ -503,7 +503,9 @@ const DIFF_LABELS = ['Fácil', 'Media', 'Difícil'];
 const DIFF_BADGE_CLASSES = ['badge-easy', 'badge-medium', 'badge-hard'];
 const LEVEL_DOT_CLASSES  = ['dot-basic', 'dot-medium', 'dot-advanced'];
 const LEVEL_BIG_CLASSES  = ['lb-basic', 'lb-medium', 'lb-advanced'];
-const MAX_Q = 10;
+const MIN_Q               = 6;
+const MAX_Q               = 15;
+const CERTAINTY_THRESHOLD = 0.80;
 
 // P(correct | difficulty, level)  rows=diff (0=easy,1=med,2=hard)  cols=level (0,1,2)
 const LIKELIHOOD = [
@@ -600,9 +602,13 @@ function renderQuestion(q) {
   askedIds.add(q.id);
 
   // counters
-  document.getElementById('q-counter').textContent = `Pregunta ${answered + 1} de ${MAX_Q}`;
-  document.getElementById('q-score').textContent   = `${correct} correcta${correct !== 1 ? 's' : ''}`;
-  document.getElementById('prog-fill').style.width = `${(answered / MAX_Q) * 100}%`;
+  const conf     = prior[bestLevel()];
+  const certPct  = Math.min(100, Math.round((conf / CERTAINTY_THRESHOLD) * 100));
+  document.getElementById('q-counter').textContent  = `Pregunta ${answered + 1} · máx. ${MAX_Q}`;
+  document.getElementById('q-score').textContent    = `${correct} correcta${correct !== 1 ? 's' : ''}`;
+  document.getElementById('prog-fill').style.width  = certPct + '%';
+  document.getElementById('certainty-note').textContent =
+    `Certeza: ${Math.round(conf * 100)}% · para al superar el 80 %${answered < MIN_Q ? ` (mín. ${MIN_Q} preguntas)` : ''}`;
 
   // badges
   const diffBadge = document.getElementById('diff-badge');
@@ -695,7 +701,10 @@ function handleAnswer(chosen) {
 
   // next
   setTimeout(() => {
-    if (answered >= MAX_Q) {
+    const conf        = prior[bestLevel()];
+    const certain     = answered >= MIN_Q && conf >= CERTAINTY_THRESHOLD;
+    const hitMax      = answered >= MAX_Q;
+    if (certain || hitMax) {
       showResults();
     } else {
       const next = selectNext();
@@ -757,11 +766,15 @@ function showResults() {
   // explainer
   const diffCounts = [0, 0, 0];
   history.forEach(h => diffCounts[h.diff]++);
+  const stopReason = conf >= CERTAINTY_THRESHOLD
+    ? `alcanzó el umbral de certeza del ${CERTAINTY_THRESHOLD * 100} %`
+    : `llegó al máximo de ${MAX_Q} preguntas`;
   document.getElementById('explainer-text').textContent =
     `El sistema empezó con una distribución uniforme (33 % para cada nivel). ` +
     `Realizaste ${answered} preguntas: ${diffCounts[0]} fáciles, ${diffCounts[1]} medias ` +
     `y ${diffCounts[2]} difíciles, seleccionadas adaptativamente según el nivel estimado ` +
-    `en cada momento. La distribución final converge en ${LEVELS[lvl]} con un ${conf} % ` +
+    `en cada momento. El test finalizó porque ${stopReason}. ` +
+    `La distribución final converge en ${LEVELS[lvl]} con un ${conf} % ` +
     `de confianza (${correct} respuestas correctas de ${answered}).`;
 }
 </script>

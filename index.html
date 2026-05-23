@@ -516,15 +516,16 @@ const LIKELIHOOD = [
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-let prior, askedIds, currentQ, answered, correct, history;
+let prior, askedIds, currentQ, answered, correct, history, consecutiveEasy;
 
 function resetState() {
-  prior    = [1/3, 1/3, 1/3];
-  askedIds = new Set();
-  currentQ = null;
-  answered = 0;
-  correct  = 0;
-  history  = [];
+  prior         = [1/3, 1/3, 1/3];
+  askedIds      = new Set();
+  currentQ      = null;
+  answered      = 0;
+  correct       = 0;
+  history       = [];
+  consecutiveEasy = 0;
 }
 
 // ─── BAYES ────────────────────────────────────────────────────────────────────
@@ -546,11 +547,13 @@ function bestLevel() {
 
 function selectNext() {
   const lvl = bestLevel();
-  // target difficulty mirrors estimated level (0→easy, 1→medium, 2→hard)
+  // After 2 consecutive easy questions, force a medium to allow recovery
+  const forceMedium = consecutiveEasy >= 2;
+  const targetDiff  = forceMedium ? 1 : lvl;
   // build priority order around target
-  const order = [lvl];
-  if (lvl > 0) order.push(lvl - 1);
-  if (lvl < 2) order.push(lvl + 1);
+  const order = [targetDiff];
+  if (targetDiff > 0) order.push(targetDiff - 1);
+  if (targetDiff < 2) order.push(targetDiff + 1);
   [0, 1, 2].forEach(d => { if (!order.includes(d)) order.push(d); });
 
   for (const diff of order) {
@@ -652,6 +655,10 @@ function handleAnswer(chosen) {
 
   // bayes update
   updatePrior(isCorrect, currentQ.diff);
+
+  // track consecutive easy questions for recovery injection
+  if (currentQ.diff === 0) consecutiveEasy++;
+  else consecutiveEasy = 0;
 
   // record
   history.push({

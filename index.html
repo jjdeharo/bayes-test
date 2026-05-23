@@ -368,6 +368,7 @@
       </div>
       <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); margin-top:0.3rem;">
         <span id="certainty-note">Certeza: 33% · para al superar el 80% (mín. 6 preguntas)</span>
+        <span title="Peor caso calculado por búsqueda minimax sobre todas las secuencias de respuestas posibles">máx. <span id="maxq-note"></span> (minimax)</span>
       </div>
     </div>
 
@@ -660,7 +661,8 @@ function renderQuestion(q) {
   // progress (entropy-based)
   const h       = entropy(prior);
   const certPct = Math.min(100, Math.round(((H0 - h) / (H0 - H_STOP)) * 100));
-  document.getElementById('q-counter').textContent = `Pregunta ${answered + 1} · máx. ${MAX_Q}`;
+  document.getElementById('q-counter').textContent = `Pregunta ${answered + 1}`;
+  document.getElementById('maxq-note').textContent = MAX_Q;
   document.getElementById('q-score').textContent   = `${correct} correcta${correct !== 1 ? 's' : ''}`;
   document.getElementById('prog-fill').style.width = certPct + '%';
   document.getElementById('certainty-note').textContent =

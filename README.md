@@ -47,49 +47,69 @@ Este prior expresa ignorancia total: las tres hipótesis son igualmente plausibl
 
 ### La función de verosimilitud
 
-> **En pocas palabras:** esta tabla recoge cuánto se espera que acierte cada tipo de alumno según la dificultad de la pregunta. Es la pieza clave que da al sistema su capacidad de discriminar niveles.
+> **En pocas palabras:** esta tabla recoge cuánto se espera que acierte cada tipo de alumno según la dificultad de la pregunta. Es la pieza clave que da al sistema su capacidad de discriminar niveles. Los valores incluyen una corrección para tener en cuenta que el alumno puede acertar por azar aunque no sepa la respuesta.
 
 Cada pregunta tiene asignado un nivel de dificultad (fácil, media o difícil). La verosimilitud recoge la probabilidad de que un alumno de cada nivel responda correctamente:
 
 |                  | Nivel Básico | Nivel Medio | Nivel Avanzado |
 |------------------|:------------:|:-----------:|:--------------:|
-| Pregunta fácil   |    85 %      |    93 %     |     98 %       |
-| Pregunta media   |    35 %      |    65 %     |     88 %       |
-| Pregunta difícil |    10 %      |    30 %     |     70 %       |
+| Pregunta fácil   |   88,75 %    |   94,75 %   |    98,5 %      |
+| Pregunta media   |   51,25 %    |   73,75 %   |    91,0 %      |
+| Pregunta difícil |   32,5 %     |   47,5 %    |    77,5 %      |
 
-Estos valores reflejan el supuesto de que las preguntas están bien calibradas: una pregunta difícil discrimina entre niveles medios y avanzados, mientras que una pregunta fácil apenas aporta información sobre los niveles superiores (casi todos aciertan).
+Estos valores se obtienen a partir de una calibración previa (ver sección siguiente) y garantizan que ningún alumno, sea cual sea su nivel, tenga una probabilidad de acierto inferior al 25 % (el suelo del azar con 4 opciones).
 
 Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: $1 - P(E \mid H)$.
 
+### Corrección por azar — modelo IRT de tres parámetros (3PL)
+
+> **En pocas palabras:** con 4 opciones, cualquier alumno tiene al menos un 25 % de probabilidad de acertar por pura suerte. Sin corregir esto, el modelo trataría algunos aciertos como evidencia mucho más fuerte de lo que realmente son. La corrección ajusta todos los valores para que el azar quede incorporado en el cálculo.
+
+Con ítems de cuatro opciones la probabilidad mínima teórica de acierto es $G = \tfrac{1}{4}$, incluso para alguien que no sabe nada. El modelo IRT de tres parámetros (3PL) incorpora este suelo mediante la siguiente transformación sobre la probabilidad de conocimiento puro $k$:
+
+$$P(\text{correcto} \mid \text{diff}, \text{nivel}) = G + (1 - G) \cdot k = \frac{1}{4} + \frac{3}{4} \cdot k$$
+
+Los valores de conocimiento puro $k$ (antes de la corrección) son:
+
+|                  | Básico ($k$) | Medio ($k$) | Avanzado ($k$) |
+|------------------|:------------:|:-----------:|:--------------:|
+| Pregunta fácil   |    0,85      |    0,93     |    0,98        |
+| Pregunta media   |    0,35      |    0,65     |    0,88        |
+| Pregunta difícil |    0,10      |    0,30     |    0,70        |
+
+Sin esta corrección, el valor Difícil/Básico sería 0,10, por debajo del suelo del azar (0,25), lo que implicaría que un alumno básico acierta preguntas difíciles *menos* que tirando una moneda al azar — un supuesto inconsistente.
+
+La corrección tiene además una consecuencia importante sobre la asimetría informativa: un **fallo** mantiene los mismos ratios de verosimilitud que antes (todos los valores de fallo se multiplican por el mismo factor $\tfrac{3}{4}$, que se cancela en la normalización), mientras que un **acierto** es ahora menos diagnóstico porque siempre puede deberse al azar.
+
 ### La actualización bayesiana paso a paso
 
-> **En pocas palabras:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 58 % de confianza que el alumno es de nivel Básico.
+> **En pocas palabras:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 58 % de confianza que el alumno es de nivel Básico. Los fallos son especialmente informativos porque el azar no puede "rescatar" a un alumno que no sabe la respuesta.
 
-Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media. La actualización sería:
+Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media. Con los valores corregidos por azar ($P(\text{media}) = [0{,}5125,\ 0{,}7375,\ 0{,}91]$), la actualización sería:
 
 **Verosimilitudes del fallo en pregunta media:**
 
-$$P(\text{fallo} \mid \text{media}, \text{Básico}) = 1 - 0{,}35 = 0{,}65$$
+$$P(\text{fallo} \mid \text{media}, \text{Básico}) = 1 - 0{,}5125 = 0{,}4875$$
 
-$$P(\text{fallo} \mid \text{media}, \text{Medio}) = 1 - 0{,}65 = 0{,}35$$
+$$P(\text{fallo} \mid \text{media}, \text{Medio}) = 1 - 0{,}7375 = 0{,}2625$$
 
-$$P(\text{fallo} \mid \text{media}, \text{Avanzado}) = 1 - 0{,}88 = 0{,}12$$
+$$P(\text{fallo} \mid \text{media}, \text{Avanzado}) = 1 - 0{,}91 = 0{,}09$$
 
 **Productos con el prior** $\left(\frac{1}{3}\right)$:
 
-$$\text{Básico:} \quad 0{,}65 \times \tfrac{1}{3} = 0{,}2167 \qquad \text{Medio:} \quad 0{,}35 \times \tfrac{1}{3} = 0{,}1167 \qquad \text{Avanzado:} \quad 0{,}12 \times \tfrac{1}{3} = 0{,}0400$$
+$$\text{Básico:} \quad 0{,}4875 \times \tfrac{1}{3} = 0{,}1625 \qquad \text{Medio:} \quad 0{,}2625 \times \tfrac{1}{3} = 0{,}0875 \qquad \text{Avanzado:} \quad 0{,}09 \times \tfrac{1}{3} = 0{,}03$$
 
-**Normalización** — suma total: $0{,}2167 + 0{,}1167 + 0{,}0400 = 0{,}3734$
+**Normalización** — suma total: $0{,}1625 + 0{,}0875 + 0{,}03 = 0{,}28$
 
 **Posterior:**
 
-$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}2167}{0{,}3734} \approx 58\%$$
+$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}1625}{0{,}28} \approx 58\%$$
 
-$$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}1167}{0{,}3734} \approx 31\%$$
+$$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}0875}{0{,}28} \approx 31\%$$
 
-$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}0400}{0{,}3734} \approx 11\%$$
+$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}03}{0{,}28} \approx 11\%$$
 
-Tras un solo fallo en una pregunta media, el sistema ya estima con un 58 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta, y así sucesivamente.
+Tras un solo fallo en una pregunta media, el sistema estima con un 58 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta, y así sucesivamente. Nótese que los porcentajes son prácticamente idénticos a los que se obtendrían sin la corrección: esto se debe a que, para los **fallos**, la corrección multiplica todos los valores por el mismo factor $\tfrac{3}{4}$, que desaparece en la normalización. La corrección afecta principalmente a los **aciertos**, haciéndolos menos diagnósticos.
 
 ### Convergencia
 

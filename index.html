@@ -604,7 +604,8 @@ function bestLevel() {
 
 function selectNext() {
   const lvl = bestLevel();
-  // After 2 consecutive easy questions, force a medium to allow recovery
+  // After 2 consecutive correct easy answers, force a medium to allow recovery
+  // (wrong easy answers already push entropy down toward Básico — no probe needed)
   const forceMedium = consecutiveEasy >= 2;
   const targetDiff  = forceMedium ? 1 : lvl;
   // build priority order around target
@@ -718,8 +719,9 @@ function handleAnswer(chosen) {
   // bayes update
   updatePrior(isCorrect, currentQ.diff);
 
-  // track consecutive easy questions for recovery injection
-  if (currentQ.diff === 0) consecutiveEasy++;
+  // track consecutive correct easy answers for recovery injection
+  // Only correct easy answers create ambiguity; wrong ones reinforce Básico naturally
+  if (currentQ.diff === 0 && isCorrect) consecutiveEasy++;
   else consecutiveEasy = 0;
 
   // record

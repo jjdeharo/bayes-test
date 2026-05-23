@@ -136,10 +136,12 @@ y la nota inferior muestra los bits de incertidumbre actuales frente al objetivo
 
 Las preguntas fáciles aportan poca información discriminatoria. Un alumno que falle la primera pregunta media puede quedar atrapado recibiendo solo preguntas fáciles, sin posibilidad real de que la distribución se desplace hacia niveles superiores.
 
-Para evitarlo, el sistema cuenta las preguntas fáciles **consecutivas** enviadas. Tras **2 seguidas**, fuerza automáticamente una pregunta de dificultad media como sondeo de recuperación:
+Para evitarlo, el sistema cuenta las preguntas fáciles **acertadas consecutivamente**. Tras **2 aciertos seguidos en fáciles**, fuerza automáticamente una pregunta de dificultad media como sondeo de recuperación:
 
 - Si el alumno la **acierta**, la distribución posterior se desplaza hacia Medio o Avanzado y el sistema puede volver a asignar preguntas más difíciles.
-- Si la **falla**, el contador se reinicia y el ciclo se repite cada 2 preguntas fáciles.
+- Si la **falla**, el contador se reinicia y el ciclo se repite.
+
+Un fallo en una pregunta fácil no activa el sondeo porque ya aporta evidencia directa a favor de Básico, reduciendo la entropía por sí solo sin necesidad de una pregunta adicional.
 
 Este mecanismo preserva la lógica bayesiana: la pregunta media no altera el prior artificialmente, simplemente proporciona evidencia más discriminatoria en el momento oportuno.
 

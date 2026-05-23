@@ -491,6 +491,7 @@
   </div>
 </div>
 
+<script src="questions.js"></script>
 <script>
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
@@ -508,104 +509,7 @@ const LIKELIHOOD = [
   [0.10, 0.30, 0.70],
 ];
 
-const QUESTIONS = [
-  // ── EASY ──
-  { id:  0, diff: 0, cat: 'Geografía',
-    q: '¿Cuál es la capital de Francia?',
-    opts: ['Londres', 'Berlín', 'Madrid', 'París'], ans: 3 },
-  { id:  1, diff: 0, cat: 'Ciencia',
-    q: '¿Cuántos planetas tiene el sistema solar?',
-    opts: ['7', '9', '10', '8'], ans: 3 },
-  { id:  2, diff: 0, cat: 'Arte',
-    q: '¿Quién pintó la Mona Lisa?',
-    opts: ['Miguel Ángel', 'Pablo Picasso', 'Leonardo da Vinci', 'Rafael'], ans: 2 },
-  { id:  3, diff: 0, cat: 'Geografía',
-    q: '¿En qué continente está Brasil?',
-    opts: ['África', 'Asia', 'Europa', 'América del Sur'], ans: 3 },
-  { id:  4, diff: 0, cat: 'Geografía',
-    q: '¿Cuál es el océano más grande del mundo?',
-    opts: ['Atlántico', 'Índico', 'Ártico', 'Pacífico'], ans: 3 },
-  // ── MEDIUM ──
-  { id:  5, diff: 1, cat: 'Historia',
-    q: '¿En qué año llegó el hombre a la Luna por primera vez?',
-    opts: ['1965', '1972', '1969', '1957'], ans: 2 },
-  { id:  6, diff: 1, cat: 'Ciencia',
-    q: '¿Qué científico formuló la teoría de la relatividad?',
-    opts: ['Isaac Newton', 'Charles Darwin', 'Albert Einstein', 'Stephen Hawking'], ans: 2 },
-  { id:  7, diff: 1, cat: 'Literatura',
-    q: '¿Quién escribió El Quijote de la Mancha?',
-    opts: ['Lope de Vega', 'Miguel de Cervantes', 'Francisco de Quevedo', 'Tirso de Molina'], ans: 1 },
-  { id:  8, diff: 1, cat: 'Historia',
-    q: '¿En qué año cayó el muro de Berlín?',
-    opts: ['1985', '1991', '1987', '1989'], ans: 3 },
-  { id:  9, diff: 1, cat: 'Arte',
-    q: '¿Quién compuso la Quinta Sinfonía en Do menor?',
-    opts: ['Mozart', 'Bach', 'Beethoven', 'Schubert'], ans: 2 },
-  // ── HARD ──
-  { id: 10, diff: 2, cat: 'Ciencia',
-    q: '¿Cuál es el elemento químico con símbolo "Au"?',
-    opts: ['Plata', 'Aluminio', 'Argón', 'Oro'], ans: 3 },
-  { id: 11, diff: 2, cat: 'Historia',
-    q: '¿En qué año se fundó la Organización de las Naciones Unidas?',
-    opts: ['1944', '1948', '1950', '1945'], ans: 3 },
-  { id: 12, diff: 2, cat: 'Filosofía',
-    q: '¿Qué filósofo escribió "El mundo como voluntad y representación"?',
-    opts: ['Immanuel Kant', 'Georg Hegel', 'Arthur Schopenhauer', 'Friedrich Nietzsche'], ans: 2 },
-  { id: 13, diff: 2, cat: 'Ciencia',
-    q: '¿Cuántos huesos tiene el cuerpo humano adulto?',
-    opts: ['196', '186', '206', '216'], ans: 2 },
-  { id: 14, diff: 2, cat: 'Ciencia',
-    q: '¿Cuál es el segundo elemento más abundante en el universo?',
-    opts: ['Oxígeno', 'Helio', 'Carbono', 'Nitrógeno'], ans: 1 },
-  // ── EASY (ampliación) ──
-  { id: 15, diff: 0, cat: 'Ciencia',
-    q: '¿Cuántos colores tiene el arcoíris?',
-    opts: ['5', '6', '8', '7'], ans: 3 },
-  { id: 16, diff: 0, cat: 'Ciencia',
-    q: '¿Cuál es el animal terrestre más rápido?',
-    opts: ['León', 'Guepardo', 'Leopardo', 'Caballo'], ans: 1 },
-  { id: 17, diff: 0, cat: 'Ciencia',
-    q: '¿Cuántos días tiene un año bisiesto?',
-    opts: ['364', '365', '366', '367'], ans: 2 },
-  { id: 18, diff: 0, cat: 'Historia',
-    q: '¿De qué material están hechas las láminas exteriores de la Estatua de la Libertad?',
-    opts: ['Hierro', 'Bronce', 'Cobre', 'Acero'], ans: 2 },
-  { id: 19, diff: 0, cat: 'Geografía',
-    q: '¿Cuál es el país más grande del mundo por superficie?',
-    opts: ['China', 'Canadá', 'Estados Unidos', 'Rusia'], ans: 3 },
-  // ── MEDIUM (ampliación) ──
-  { id: 20, diff: 1, cat: 'Historia',
-    q: '¿Quién fue el primer presidente de los Estados Unidos?',
-    opts: ['Abraham Lincoln', 'George Washington', 'Thomas Jefferson', 'Benjamin Franklin'], ans: 1 },
-  { id: 21, diff: 1, cat: 'Geografía',
-    q: '¿Cuál es la montaña más alta del mundo?',
-    opts: ['K2', 'Aconcagua', 'Mont Blanc', 'Everest'], ans: 3 },
-  { id: 22, diff: 1, cat: 'Historia',
-    q: '¿En qué año comenzó la Primera Guerra Mundial?',
-    opts: ['1910', '1914', '1918', '1916'], ans: 1 },
-  { id: 23, diff: 1, cat: 'Ciencia',
-    q: '¿Cuántos cromosomas tiene una célula humana normal?',
-    opts: ['23', '44', '46', '48'], ans: 2 },
-  { id: 24, diff: 1, cat: 'Historia',
-    q: '¿En qué ciudad se celebraron los primeros Juegos Olímpicos modernos?',
-    opts: ['París', 'Londres', 'Atenas', 'Roma'], ans: 2 },
-  // ── HARD (ampliación) ──
-  { id: 25, diff: 2, cat: 'Geografía',
-    q: '¿Cuál es la capital de Mongolia?',
-    opts: ['Astana', 'Ulán Bator', 'Taskent', 'Biskek'], ans: 1 },
-  { id: 26, diff: 2, cat: 'Arte',
-    q: '¿En qué año nació Leonardo da Vinci?',
-    opts: ['1432', '1452', '1467', '1478'], ans: 1 },
-  { id: 27, diff: 2, cat: 'Literatura',
-    q: '¿Qué escritor ganó el Premio Nobel de Literatura en 1982?',
-    opts: ['Mario Vargas Llosa', 'Jorge Luis Borges', 'Gabriel García Márquez', 'Pablo Neruda'], ans: 2 },
-  { id: 28, diff: 2, cat: 'Ciencia',
-    q: '¿Cuál es la fórmula química del agua oxigenada?',
-    opts: ['H2O', 'H2O2', 'HO2', 'H3O'], ans: 1 },
-  { id: 29, diff: 2, cat: 'Literatura',
-    q: '¿Quién escribió "En busca del tiempo perdido"?',
-    opts: ['James Joyce', 'Franz Kafka', 'Marcel Proust', 'Virginia Woolf'], ans: 2 },
-];
+// Las preguntas se cargan desde questions.js
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 

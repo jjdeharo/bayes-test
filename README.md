@@ -19,37 +19,31 @@ El objetivo pedagógico no es solo calificar al alumno al final, sino ir reducie
 
 El núcleo del sistema es el teorema de Bayes:
 
-```
-P(H | E) = P(E | H) · P(H) / P(E)
-```
+$$P(H \mid E) = \frac{P(E \mid H) \cdot P(H)}{P(E)}$$
 
 Donde:
 
-- **H** es una hipótesis sobre el nivel del alumno (Básico, Medio o Avanzado)
-- **E** es la evidencia observada (respuesta correcta o incorrecta)
-- **P(H)** es la probabilidad prior: lo que el sistema cree antes de ver la respuesta
-- **P(E | H)** es la verosimilitud: la probabilidad de obtener esa respuesta si el alumno tuviera el nivel H
-- **P(H | E)** es la probabilidad posterior: la creencia actualizada tras observar la respuesta
+- $H$ es una hipótesis sobre el nivel del alumno (Básico, Medio o Avanzado)
+- $E$ es la evidencia observada (respuesta correcta o incorrecta)
+- $P(H)$ es la probabilidad **prior**: lo que el sistema cree antes de ver la respuesta
+- $P(E \mid H)$ es la **verosimilitud**: la probabilidad de obtener esa respuesta si el alumno tuviera el nivel $H$
+- $P(H \mid E)$ es la probabilidad **posterior**: la creencia actualizada tras observar la respuesta
 
-En la práctica se trabaja con tres hipótesis simultáneas (Básico, Medio, Avanzado), y el denominador P(E) se obtiene por normalización:
+En la práctica se trabaja con tres hipótesis simultáneas y el denominador $P(E)$ se obtiene por normalización:
 
-```
-P(H_i | E) = P(E | H_i) · P(H_i) / Σ_j [ P(E | H_j) · P(H_j) ]
-```
+$$P(H_i \mid E) = \frac{P(E \mid H_i) \cdot P(H_i)}{\displaystyle\sum_{j} P(E \mid H_j) \cdot P(H_j)}$$
 
 ### El prior inicial
 
 Al comenzar el test, el sistema no tiene ninguna información sobre el alumno. Se asigna una distribución uniforme:
 
-```
-P(Básico) = P(Medio) = P(Avanzado) = 1/3 ≈ 33%
-```
+$$P(\text{Básico}) = P(\text{Medio}) = P(\text{Avanzado}) = \frac{1}{3} \approx 33\%$$
 
 Este prior expresa ignorancia total: las tres hipótesis son igualmente plausibles.
 
 ### La función de verosimilitud
 
-Cada pregunta tiene asignado un nivel de dificultad (fácil, media o difícil). La verosimilitud recoge la probabilidad de que un alumno de cada nivel responda correctamente a cada tipo de pregunta:
+Cada pregunta tiene asignado un nivel de dificultad (fácil, media o difícil). La verosimilitud recoge la probabilidad de que un alumno de cada nivel responda correctamente:
 
 |                  | Nivel Básico | Nivel Medio | Nivel Avanzado |
 |------------------|:------------:|:-----------:|:--------------:|
@@ -59,36 +53,39 @@ Cada pregunta tiene asignado un nivel de dificultad (fácil, media o difícil). 
 
 Estos valores reflejan el supuesto de que las preguntas están bien calibradas: una pregunta difícil discrimina entre niveles medios y avanzados, mientras que una pregunta fácil apenas aporta información sobre los niveles superiores (casi todos aciertan).
 
-Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: `1 - P(E | H)`.
+Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: $1 - P(E \mid H)$.
 
 ### La actualización bayesiana paso a paso
 
 Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media. La actualización sería:
 
-```
-Verosimilitudes del fallo medio:
-  P(fallo medio | Básico)    = 1 - 0.35 = 0.65
-  P(fallo medio | Medio)     = 1 - 0.65 = 0.35
-  P(fallo medio | Avanzado)  = 1 - 0.88 = 0.12
+**Verosimilitudes del fallo en pregunta media:**
 
-Productos con el prior (1/3 cada uno):
-  Básico:    0.65 × 0.333 = 0.2167
-  Medio:     0.35 × 0.333 = 0.1167
-  Avanzado:  0.12 × 0.333 = 0.0400
+$$P(\text{fallo} \mid \text{media}, \text{Básico}) = 1 - 0{,}35 = 0{,}65$$
 
-Suma total: 0.3734
+$$P(\text{fallo} \mid \text{media}, \text{Medio}) = 1 - 0{,}65 = 0{,}35$$
 
-Posterior normalizado:
-  P(Básico | fallo medio)    = 0.2167 / 0.3734 ≈ 58%
-  P(Medio | fallo medio)     = 0.1167 / 0.3734 ≈ 31%
-  P(Avanzado | fallo medio)  = 0.0400 / 0.3734 ≈ 11%
-```
+$$P(\text{fallo} \mid \text{media}, \text{Avanzado}) = 1 - 0{,}88 = 0{,}12$$
+
+**Productos con el prior** $\left(\frac{1}{3}\right)$:
+
+$$\text{Básico:} \quad 0{,}65 \times \tfrac{1}{3} = 0{,}2167 \qquad \text{Medio:} \quad 0{,}35 \times \tfrac{1}{3} = 0{,}1167 \qquad \text{Avanzado:} \quad 0{,}12 \times \tfrac{1}{3} = 0{,}0400$$
+
+**Normalización** — suma total: $0{,}2167 + 0{,}1167 + 0{,}0400 = 0{,}3734$
+
+**Posterior:**
+
+$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}2167}{0{,}3734} \approx 58\%$$
+
+$$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}1167}{0{,}3734} \approx 31\%$$
+
+$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}0400}{0{,}3734} \approx 11\%$$
 
 Tras un solo fallo en una pregunta media, el sistema ya estima con un 58 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta, y así sucesivamente.
 
 ### Convergencia
 
-La distribución converge porque cada respuesta multiplica las probabilidades por factores distintos para cada nivel. Con respuestas consistentes, la hipótesis verdadera acumula multiplicaciones favorables y las falsas se atenúan. En general, con 8-12 preguntas se obtiene una distribución suficientemente concentrada para tomar una decisión pedagógica con confianza.
+La distribución converge porque cada respuesta multiplica las probabilidades por factores distintos para cada nivel. Con respuestas consistentes, la hipótesis verdadera acumula multiplicaciones favorables y las demás se atenúan. En general, con 8–12 preguntas se obtiene una distribución suficientemente concentrada para tomar una decisión pedagógica con confianza.
 
 ---
 
@@ -96,13 +93,26 @@ La distribución converge porque cada respuesta multiplica las probabilidades po
 
 ### Criterio de dificultad
 
-El sistema mapea directamente el nivel estimado con la dificultad objetivo de la siguiente pregunta:
+El sistema mapea el nivel estimado (el de mayor probabilidad posterior) con la dificultad objetivo de la siguiente pregunta:
 
-- Nivel estimado **Básico** → siguiente pregunta **fácil**
-- Nivel estimado **Medio** → siguiente pregunta **media**
-- Nivel estimado **Avanzado** → siguiente pregunta **difícil**
+| Nivel estimado | Dificultad objetivo |
+|:--------------:|:-------------------:|
+| Básico         | Fácil               |
+| Medio          | Media               |
+| Avanzado       | Difícil             |
 
 Si no quedan preguntas disponibles en la dificultad objetivo, el sistema busca en dificultades adyacentes.
+
+### Mecanismo de recuperación
+
+Las preguntas fáciles tienen verosimilitudes muy próximas entre sí para los tres niveles ($0{,}85$, $0{,}93$ y $0{,}98$), por lo que aportan poca información discriminatoria. Un alumno que falle la primera pregunta media puede quedar atrapado recibiendo solo preguntas fáciles, sin posibilidad real de recuperar el nivel estimado.
+
+Para evitarlo, el sistema cuenta las preguntas fáciles **consecutivas** enviadas. Tras **2 seguidas**, fuerza automáticamente una pregunta de dificultad media como sondeo de recuperación:
+
+- Si el alumno la **acierta**, la distribución posterior se desplaza hacia Medio o Avanzado y el sistema puede volver a asignar preguntas más difíciles.
+- Si la **falla**, el contador se reinicia y el ciclo se repite cada 2 preguntas fáciles.
+
+Este mecanismo preserva la lógica bayesiana: la pregunta media no altera el prior artificialmente, simplemente proporciona evidencia más discriminatoria en el momento oportuno.
 
 ### Criterio de categoría
 

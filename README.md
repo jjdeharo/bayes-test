@@ -103,16 +103,34 @@ El sistema mapea el nivel estimado (el de mayor probabilidad posterior) con la d
 
 Si no quedan preguntas disponibles en la dificultad objetivo, el sistema busca en dificultades adyacentes.
 
-### Condición de parada por certeza
+### Condición de parada por entropía de Shannon
 
-El test no tiene un número fijo de preguntas. En su lugar, finaliza cuando se cumple **cualquiera** de estas condiciones:
+El test no tiene un número fijo de preguntas. La condición de parada se define en términos de la **entropía de Shannon** de la distribución posterior:
 
-1. La confianza en el nivel MAP supera el **umbral de certeza** ($\geq 80\,\%$), siempre que se hayan respondido al menos **6 preguntas** (mínimo para evitar conclusiones prematuras).
-2. Se alcanza el **máximo de 15 preguntas** como tope de seguridad.
+$$H(\pi) = -\sum_{i} \pi_i \log_2 \pi_i$$
 
-Esto tiene una consecuencia importante: un alumno que solo acierta preguntas fáciles tarde más en terminar, porque las preguntas fáciles discriminan poco entre niveles (verosimilitudes $0{,}85$, $0{,}93$ y $0{,}98$, muy próximas entre sí). La distribución converge lentamente y el sistema sigue pidiendo más evidencia. Un alumno claramente avanzado, en cambio, puede terminar en 7–8 preguntas si acierta varias difíciles seguidas.
+El test finaliza cuando se cumple **cualquiera** de estas condiciones:
 
-La barra de progreso refleja la **certeza acumulada** hacia el umbral del 80 %, no el número de preguntas completadas, de modo que el alumno puede ver en todo momento cuánto falta para que el sistema tenga suficiente confianza.
+1. $H(\pi) < H_{\text{stop}}$, con un mínimo de **6 preguntas** para evitar conclusiones prematuras.
+2. Se alcanza el tope $MAX\_Q$, calculado automáticamente.
+
+**Entropía inicial** — prior uniforme sobre 3 niveles:
+
+$$H_0 = \log_2 3 \approx 1{,}585 \text{ bits}$$
+
+**Umbral de parada** — se elige como la entropía de la distribución menos concentrada que aún tiene el 80 % de masa en un solo nivel, es decir $[0{,}80,\, 0{,}10,\, 0{,}10]$:
+
+$$H_{\text{stop}} = -(0{,}80\log_2 0{,}80 + 0{,}10\log_2 0{,}10 + 0{,}10\log_2 0{,}10) \approx 0{,}922 \text{ bits}$$
+
+**Número máximo de preguntas** — se deriva mediante una búsqueda minimax sobre el árbol completo de respuestas posibles: en cada nodo se elige la respuesta que maximiza la entropía residual (peor caso para el alumno), y se busca la profundidad máxima antes de que $H < H_{\text{stop}}$. El resultado garantiza que el test termina en a lo sumo $MAX\_Q$ preguntas sea cual sea la secuencia de respuestas.
+
+Esta derivación tiene una consecuencia importante: un alumno que solo acierta preguntas fáciles tarda más en terminar, porque las preguntas fáciles tienen verosimilitudes muy próximas entre sí ($0{,}85$, $0{,}93$, $0{,}98$) y apenas reducen la entropía. La distribución converge lentamente y el sistema sigue pidiendo evidencia. Un alumno claramente avanzado, en cambio, puede terminar en pocas preguntas si acierta varias difíciles seguidas.
+
+La barra de progreso refleja la **reducción relativa de entropía** hacia $H_{\text{stop}}$:
+
+$$\text{progreso} = \frac{H_0 - H(\pi)}{H_0 - H_{\text{stop}}}$$
+
+y la nota inferior muestra los bits de incertidumbre actuales frente al objetivo.
 
 ### Mecanismo de recuperación
 

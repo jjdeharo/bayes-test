@@ -503,9 +503,7 @@ const DIFF_LABELS = ['Fácil', 'Media', 'Difícil'];
 const DIFF_BADGE_CLASSES = ['badge-easy', 'badge-medium', 'badge-hard'];
 const LEVEL_DOT_CLASSES  = ['dot-basic', 'dot-medium', 'dot-advanced'];
 const LEVEL_BIG_CLASSES  = ['lb-basic', 'lb-medium', 'lb-advanced'];
-const MIN_Q               = 6;
-const MAX_Q               = 15;
-const CERTAINTY_THRESHOLD = 0.80;
+const MIN_Q = 6;
 
 // P(correct | difficulty, level)  rows=diff (0=easy,1=med,2=hard)  cols=level (0,1,2)
 const LIKELIHOOD = [
@@ -513,6 +511,63 @@ const LIKELIHOOD = [
   [0.35, 0.65, 0.88],
   [0.10, 0.30, 0.70],
 ];
+
+// ─── INFORMATION THEORY ───────────────────────────────────────────────────────
+
+function entropy(dist) {
+  return -dist.reduce((h, p) => h + (p > 1e-10 ? p * Math.log2(p) : 0), 0);
+}
+
+// H0: maximum entropy — uniform prior over 3 levels
+const H0 = Math.log2(3); // ≈ 1.585 bits
+
+// H_STOP: stopping threshold — entropy of [0.80, 0.10, 0.10], the least-concentrated
+// distribution that still puts 80% mass on one level. Equivalent to MAP ≥ 80%.
+const H_STOP = entropy([0.80, 0.10, 0.10]); // ≈ 0.922 bits
+
+// MAX_Q: worst-case questions needed to reach H < H_STOP across ALL possible
+// response sequences, computed via minimax over the Bayesian update tree.
+function computeMaxQ() {
+  const cache = new Map();
+
+  function maxAdditional(prior, consecutiveEasy) {
+    if (entropy(prior) < H_STOP) return 0;
+
+    const key = prior.map(p => Math.round(p * 1000)).join(',') + ',' + consecutiveEasy;
+    if (cache.has(key)) return cache.get(key);
+
+    cache.set(key, 20); // sentinel: breaks cycles caused by float rounding
+
+    const lvl  = prior.indexOf(Math.max(...prior));
+    const diff = consecutiveEasy >= 2 ? 1 : lvl;
+
+    let worst = 0;
+    for (const isCorrect of [true, false]) {
+      const raw = prior.map((p, l) => p * (isCorrect ? LIKELIHOOD[diff][l] : 1 - LIKELIHOOD[diff][l]));
+      const s   = raw.reduce((a, b) => a + b, 0);
+      const np  = raw.map(v => v / s);
+      const nc  = diff === 0 ? consecutiveEasy + 1 : 0;
+      worst = Math.max(worst, 1 + maxAdditional(np, nc));
+    }
+
+    worst = Math.min(worst, 20);
+    cache.set(key, worst);
+    return worst;
+  }
+
+  // First question is always medium (diff=1) from uniform prior
+  let maxQ = MIN_Q;
+  for (const firstCorrect of [true, false]) {
+    const raw    = [1/3, 1/3, 1/3].map((p, l) =>
+      p * (firstCorrect ? LIKELIHOOD[1][l] : 1 - LIKELIHOOD[1][l]));
+    const s      = raw.reduce((a, b) => a + b, 0);
+    const after1 = raw.map(v => v / s);
+    maxQ = Math.max(maxQ, 1 + maxAdditional(after1, 0));
+  }
+  return maxQ;
+}
+
+const MAX_Q = computeMaxQ();
 
 // Las preguntas se cargan desde questions.js
 
@@ -601,14 +656,15 @@ function renderQuestion(q) {
   currentQ = q;
   askedIds.add(q.id);
 
-  // counters
-  const conf     = prior[bestLevel()];
-  const certPct  = Math.min(100, Math.round((conf / CERTAINTY_THRESHOLD) * 100));
-  document.getElementById('q-counter').textContent  = `Pregunta ${answered + 1} · máx. ${MAX_Q}`;
-  document.getElementById('q-score').textContent    = `${correct} correcta${correct !== 1 ? 's' : ''}`;
-  document.getElementById('prog-fill').style.width  = certPct + '%';
+  // progress (entropy-based)
+  const h       = entropy(prior);
+  const certPct = Math.min(100, Math.round(((H0 - h) / (H0 - H_STOP)) * 100));
+  document.getElementById('q-counter').textContent = `Pregunta ${answered + 1} · máx. ${MAX_Q}`;
+  document.getElementById('q-score').textContent   = `${correct} correcta${correct !== 1 ? 's' : ''}`;
+  document.getElementById('prog-fill').style.width = certPct + '%';
   document.getElementById('certainty-note').textContent =
-    `Certeza: ${Math.round(conf * 100)}% · para al superar el 80 %${answered < MIN_Q ? ` (mín. ${MIN_Q} preguntas)` : ''}`;
+    `Incertidumbre: ${h.toFixed(2)} bits · objetivo: < ${H_STOP.toFixed(2)} bits` +
+    (answered < MIN_Q ? ` (mín. ${MIN_Q} preguntas)` : '');
 
   // badges
   const diffBadge = document.getElementById('diff-badge');
@@ -617,10 +673,10 @@ function renderQuestion(q) {
   document.getElementById('cat-badge').textContent = q.cat;
 
   // adaptive note
-  const lvl  = bestLevel();
-  const conf = Math.round(prior[lvl] * 100);
+  const lvl = bestLevel();
+  const pct = Math.round(prior[lvl] * 100);
   document.getElementById('adaptive-note').textContent =
-    `🎯 Nivel estimado: ${LEVELS[lvl]} (${conf}%) → se selecciona pregunta de dificultad ${DIFF_LABELS[q.diff].toLowerCase()}`;
+    `🎯 Nivel estimado: ${LEVELS[lvl]} (${pct}%) → se selecciona pregunta de dificultad ${DIFF_LABELS[q.diff].toLowerCase()}`;
 
   // hide feedback
   const fa = document.getElementById('feedback-area');
@@ -701,9 +757,8 @@ function handleAnswer(chosen) {
 
   // next
   setTimeout(() => {
-    const conf        = prior[bestLevel()];
-    const certain     = answered >= MIN_Q && conf >= CERTAINTY_THRESHOLD;
-    const hitMax      = answered >= MAX_Q;
+    const certain = answered >= MIN_Q && entropy(prior) < H_STOP;
+    const hitMax  = answered >= MAX_Q;
     if (certain || hitMax) {
       showResults();
     } else {
@@ -766,16 +821,17 @@ function showResults() {
   // explainer
   const diffCounts = [0, 0, 0];
   history.forEach(h => diffCounts[h.diff]++);
-  const stopReason = conf >= CERTAINTY_THRESHOLD
-    ? `alcanzó el umbral de certeza del ${CERTAINTY_THRESHOLD * 100} %`
+  const finalH     = entropy(prior);
+  const stopReason = finalH < H_STOP
+    ? `la entropía bajó a ${finalH.toFixed(2)} bits (umbral: ${H_STOP.toFixed(2)} bits)`
     : `llegó al máximo de ${MAX_Q} preguntas`;
   document.getElementById('explainer-text').textContent =
     `El sistema empezó con una distribución uniforme (33 % para cada nivel). ` +
     `Realizaste ${answered} preguntas: ${diffCounts[0]} fáciles, ${diffCounts[1]} medias ` +
     `y ${diffCounts[2]} difíciles, seleccionadas adaptativamente según el nivel estimado ` +
     `en cada momento. El test finalizó porque ${stopReason}. ` +
-    `La distribución final converge en ${LEVELS[lvl]} con un ${conf} % ` +
-    `de confianza (${correct} respuestas correctas de ${answered}).`;
+    `La distribución final converge en ${LEVELS[lvl]} con un ${Math.round(prior[lvl] * 100)} % ` +
+    `de confianza · entropía final: ${finalH.toFixed(2)} bits (${correct} correctas de ${answered}).`;
 }
 </script>
 

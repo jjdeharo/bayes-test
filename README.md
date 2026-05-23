@@ -19,7 +19,7 @@ El objetivo pedagógico no es solo calificar al alumno al final, sino ir reducie
 
 ### El teorema de Bayes
 
-> **En pocas palabras:** el sistema parte de una creencia inicial sobre el nivel del alumno y la corrige tras cada respuesta. Si el alumno acierta algo difícil, la probabilidad de que sea avanzado sube; si falla algo fácil, baja. La fórmula de Bayes es el mecanismo matemático que hace esa corrección de forma rigurosa.
+> **Sin fórmulas:** el sistema parte de una creencia inicial sobre el nivel del alumno y la corrige tras cada respuesta. Si el alumno acierta algo difícil, la probabilidad de que sea avanzado sube; si falla algo fácil, baja. La fórmula de Bayes es el mecanismo matemático que hace esa corrección de forma rigurosa.
 
 El núcleo del sistema es el teorema de Bayes:
 
@@ -39,7 +39,7 @@ $$P(H_i \mid E) = \frac{P(E \mid H_i) \cdot P(H_i)}{\displaystyle\sum_{j} P(E \m
 
 ### El prior inicial
 
-> **En pocas palabras:** al comenzar, el sistema no sabe nada del alumno y trata los tres niveles como igualmente probables. Es un punto de partida neutral.
+> **Sin fórmulas:** al comenzar, el sistema no sabe nada del alumno y trata los tres niveles como igualmente probables. Es un punto de partida neutral.
 
 Al comenzar el test, el sistema no tiene ninguna información sobre el alumno. Se asigna una distribución uniforme:
 
@@ -49,7 +49,7 @@ Este prior expresa ignorancia total: las tres hipótesis son igualmente plausibl
 
 ### La función de verosimilitud
 
-> **En pocas palabras:** esta tabla recoge cuánto se espera que acierte cada tipo de alumno según la dificultad de la pregunta. Es la pieza clave que da al sistema su capacidad de discriminar niveles. Los valores incluyen una corrección para tener en cuenta que el alumno puede acertar por azar aunque no sepa la respuesta.
+> **Sin fórmulas:** esta tabla recoge cuánto se espera que acierte cada tipo de alumno según la dificultad de la pregunta. Es la pieza clave que da al sistema su capacidad de discriminar niveles. Los valores incluyen una corrección para tener en cuenta que el alumno puede acertar por azar aunque no sepa la respuesta.
 
 Cada pregunta tiene asignado un nivel de dificultad (fácil, media o difícil). La verosimilitud recoge la probabilidad de que un alumno de cada nivel responda correctamente:
 
@@ -65,7 +65,7 @@ Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: 
 
 ### Corrección por azar — modelo IRT de tres parámetros (3PL)
 
-> **En pocas palabras:** con 4 opciones, cualquier alumno tiene al menos un 25 % de probabilidad de acertar por pura suerte. Sin corregir esto, el modelo trataría algunos aciertos como evidencia mucho más fuerte de lo que realmente son. La corrección ajusta todos los valores para que el azar quede incorporado en el cálculo.
+> **Sin fórmulas:** con 4 opciones, cualquier alumno tiene al menos un 25 % de probabilidad de acertar por pura suerte. Sin corregir esto, el modelo trataría algunos aciertos como evidencia mucho más fuerte de lo que realmente son. La corrección ajusta todos los valores para que el azar quede incorporado en el cálculo.
 
 Con ítems de cuatro opciones la probabilidad mínima teórica de acierto es $G = \tfrac{1}{4}$, incluso para alguien que no sabe nada. El modelo IRT de tres parámetros (3PL) incorpora este suelo mediante la siguiente transformación sobre la probabilidad de conocimiento puro $k$:
 
@@ -85,7 +85,7 @@ La corrección tiene además una consecuencia importante sobre la asimetría inf
 
 ### La actualización bayesiana paso a paso
 
-> **En pocas palabras:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 58 % de confianza que el alumno es de nivel Básico. Los fallos son especialmente informativos porque el azar no puede "rescatar" a un alumno que no sabe la respuesta.
+> **Sin fórmulas:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 58 % de confianza que el alumno es de nivel Básico. Los fallos son especialmente informativos porque el azar no puede "rescatar" a un alumno que no sabe la respuesta.
 
 Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media. Con los valores corregidos por azar ($P(\text{media}) = [0{,}5125,\ 0{,}7375,\ 0{,}91]$), la actualización sería:
 
@@ -115,7 +115,7 @@ Tras un solo fallo en una pregunta media, el sistema estima con un 58 % de confi
 
 ### Convergencia
 
-> **En pocas palabras:** con cada respuesta, el nivel verdadero del alumno se va haciendo más probable y los demás menos. El sistema no necesita muchas preguntas para llegar a una estimación fiable si las respuestas son consistentes.
+> **Sin fórmulas:** con cada respuesta, el nivel verdadero del alumno se va haciendo más probable y los demás menos. El sistema no necesita muchas preguntas para llegar a una estimación fiable si las respuestas son consistentes.
 
 La distribución converge porque cada respuesta multiplica las probabilidades por factores distintos para cada nivel. Con respuestas consistentes, la hipótesis verdadera acumula multiplicaciones favorables y las demás se atenúan.
 
@@ -125,7 +125,7 @@ La distribución converge porque cada respuesta multiplica las probabilidades po
 
 ### Criterio de dificultad
 
-> **En pocas palabras:** el sistema siempre envía preguntas acordes con el nivel que estima en ese momento. Si cree que el alumno es avanzado, le manda preguntas difíciles; si cree que es básico, fáciles. Esto maximiza la información que obtiene de cada respuesta.
+> **Sin fórmulas:** el sistema siempre envía preguntas acordes con el nivel que estima en ese momento. Si cree que el alumno es avanzado, le manda preguntas difíciles; si cree que es básico, fáciles. Esto maximiza la información que obtiene de cada respuesta.
 
 El sistema mapea el nivel estimado (el de mayor probabilidad posterior) con la dificultad objetivo de la siguiente pregunta:
 
@@ -139,7 +139,7 @@ Si no quedan preguntas disponibles en la dificultad objetivo, el sistema busca e
 
 ### Condición de parada basada en incertidumbre
 
-> **En pocas palabras:** el test no termina después de un número fijo de preguntas, sino cuando el sistema considera que ya sabe con suficiente seguridad cuál es el nivel del alumno. Esa seguridad se mide con una cantidad llamada *entropía*: cuando la incertidumbre es pequeña, el test concluye. Un alumno con un nivel muy claro puede terminar en 6 preguntas; uno con respuestas inconsistentes necesitará más.
+> **Sin fórmulas:** el test no termina después de un número fijo de preguntas, sino cuando el sistema considera que ya sabe con suficiente seguridad cuál es el nivel del alumno. Esa seguridad se mide con una cantidad llamada *entropía*: cuando la incertidumbre es pequeña, el test concluye. Un alumno con un nivel muy claro puede terminar en 6 preguntas; uno con respuestas inconsistentes necesitará más.
 
 El test no tiene un número fijo de preguntas. La condición de parada se define en términos de la **entropía de Shannon** de la distribución posterior, que mide la incertidumbre que le queda al sistema:
 
@@ -170,7 +170,7 @@ y la nota inferior muestra los bits de incertidumbre actuales frente al objetivo
 
 ### Mecanismo de recuperación
 
-> **En pocas palabras:** un alumno que falla la primera pregunta media recibe preguntas fáciles, pero si las acierta repetidamente el sistema no sabe si es realmente básico o simplemente tuvo mala suerte al principio. Tras 2 aciertos seguidos en fáciles, se inserta una pregunta media para aclarar la duda. Los fallos en fáciles no necesitan este sondeo: ya confirman el nivel básico por sí solos.
+> **Sin fórmulas:** un alumno que falla la primera pregunta media recibe preguntas fáciles, pero si las acierta repetidamente el sistema no sabe si es realmente básico o simplemente tuvo mala suerte al principio. Tras 2 aciertos seguidos en fáciles, se inserta una pregunta media para aclarar la duda. Los fallos en fáciles no necesitan este sondeo: ya confirman el nivel básico por sí solos.
 
 Las preguntas fáciles aportan poca información discriminatoria. Un alumno que falle la primera pregunta media puede quedar atrapado recibiendo solo preguntas fáciles, sin posibilidad real de que la distribución se desplace hacia niveles superiores.
 

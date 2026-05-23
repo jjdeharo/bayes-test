@@ -1,13 +1,15 @@
 # Sistema Adaptativo Bayesiano
 
-Demo educativa de evaluación adaptativa basada en el teorema de Bayes.  
+Demo educativa de evaluación adaptativa basada en el teorema de Bayes y la entropía de Shannon.  
 Acceso: **https://jjdeharo.github.io/bayes-test/**
 
 ---
 
 ## Qué es y para qué sirve
 
-Este programa es una demostración de cómo la inferencia bayesiana puede aplicarse a la evaluación educativa. A diferencia de un test convencional, donde todas las preguntas están fijadas de antemano, este sistema observa cada respuesta del alumno como una evidencia y actualiza en tiempo real su estimación sobre el nivel de conocimiento. A partir de esa estimación, selecciona dinámicamente la siguiente pregunta.
+Este programa es una demostración de cómo la inferencia bayesiana y la teoría de la información pueden aplicarse conjuntamente a la evaluación educativa. A diferencia de un test convencional, donde todas las preguntas están fijadas de antemano, este sistema observa cada respuesta del alumno como una evidencia y actualiza en tiempo real su estimación sobre el nivel de conocimiento. A partir de esa estimación, selecciona dinámicamente la siguiente pregunta.
+
+El **teorema de Bayes** es el mecanismo que actualiza las probabilidades tras cada respuesta: combina lo que el sistema ya creía con la nueva evidencia para obtener una estimación revisada. La **entropía de Shannon** mide cuánta incertidumbre queda en esa estimación y determina cuándo el sistema sabe suficiente para detener el test. Ambos conceptos trabajan juntos: Bayes actualiza, Shannon decide cuándo parar.
 
 El objetivo pedagógico no es solo calificar al alumno al final, sino ir reduciendo la incertidumbre sobre su nivel a lo largo del propio test, de forma que con pocas preguntas se obtenga una estimación más precisa que con un test lineal más largo.
 

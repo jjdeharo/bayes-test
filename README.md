@@ -17,6 +17,8 @@ El objetivo pedagógico no es solo calificar al alumno al final, sino ir reducie
 
 ### El teorema de Bayes
 
+> **En pocas palabras:** el sistema parte de una creencia inicial sobre el nivel del alumno y la corrige tras cada respuesta. Si el alumno acierta algo difícil, la probabilidad de que sea avanzado sube; si falla algo fácil, baja. La fórmula de Bayes es el mecanismo matemático que hace esa corrección de forma rigurosa.
+
 El núcleo del sistema es el teorema de Bayes:
 
 $$P(H \mid E) = \frac{P(E \mid H) \cdot P(H)}{P(E)}$$
@@ -35,6 +37,8 @@ $$P(H_i \mid E) = \frac{P(E \mid H_i) \cdot P(H_i)}{\displaystyle\sum_{j} P(E \m
 
 ### El prior inicial
 
+> **En pocas palabras:** al comenzar, el sistema no sabe nada del alumno y trata los tres niveles como igualmente probables. Es un punto de partida neutral.
+
 Al comenzar el test, el sistema no tiene ninguna información sobre el alumno. Se asigna una distribución uniforme:
 
 $$P(\text{Básico}) = P(\text{Medio}) = P(\text{Avanzado}) = \frac{1}{3} \approx 33\%$$
@@ -42,6 +46,8 @@ $$P(\text{Básico}) = P(\text{Medio}) = P(\text{Avanzado}) = \frac{1}{3} \approx
 Este prior expresa ignorancia total: las tres hipótesis son igualmente plausibles.
 
 ### La función de verosimilitud
+
+> **En pocas palabras:** esta tabla recoge cuánto se espera que acierte cada tipo de alumno según la dificultad de la pregunta. Es la pieza clave que da al sistema su capacidad de discriminar niveles.
 
 Cada pregunta tiene asignado un nivel de dificultad (fácil, media o difícil). La verosimilitud recoge la probabilidad de que un alumno de cada nivel responda correctamente:
 
@@ -56,6 +62,8 @@ Estos valores reflejan el supuesto de que las preguntas están bien calibradas: 
 Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: $1 - P(E \mid H)$.
 
 ### La actualización bayesiana paso a paso
+
+> **En pocas palabras:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 58 % de confianza que el alumno es de nivel Básico.
 
 Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media. La actualización sería:
 
@@ -85,13 +93,17 @@ Tras un solo fallo en una pregunta media, el sistema ya estima con un 58 % de co
 
 ### Convergencia
 
-La distribución converge porque cada respuesta multiplica las probabilidades por factores distintos para cada nivel. Con respuestas consistentes, la hipótesis verdadera acumula multiplicaciones favorables y las demás se atenúan. En general, con 8–12 preguntas se obtiene una distribución suficientemente concentrada para tomar una decisión pedagógica con confianza.
+> **En pocas palabras:** con cada respuesta, el nivel verdadero del alumno se va haciendo más probable y los demás menos. El sistema no necesita muchas preguntas para llegar a una estimación fiable si las respuestas son consistentes.
+
+La distribución converge porque cada respuesta multiplica las probabilidades por factores distintos para cada nivel. Con respuestas consistentes, la hipótesis verdadera acumula multiplicaciones favorables y las demás se atenúan.
 
 ---
 
 ## Selección adaptativa de preguntas
 
 ### Criterio de dificultad
+
+> **En pocas palabras:** el sistema siempre envía preguntas acordes con el nivel que estima en ese momento. Si cree que el alumno es avanzado, le manda preguntas difíciles; si cree que es básico, fáciles. Esto maximiza la información que obtiene de cada respuesta.
 
 El sistema mapea el nivel estimado (el de mayor probabilidad posterior) con la dificultad objetivo de la siguiente pregunta:
 
@@ -103,9 +115,11 @@ El sistema mapea el nivel estimado (el de mayor probabilidad posterior) con la d
 
 Si no quedan preguntas disponibles en la dificultad objetivo, el sistema busca en dificultades adyacentes.
 
-### Condición de parada por entropía de Shannon
+### Condición de parada basada en incertidumbre
 
-El test no tiene un número fijo de preguntas. La condición de parada se define en términos de la **entropía de Shannon** de la distribución posterior:
+> **En pocas palabras:** el test no termina después de un número fijo de preguntas, sino cuando el sistema considera que ya sabe con suficiente seguridad cuál es el nivel del alumno. Esa seguridad se mide con una cantidad llamada *entropía*: cuando la incertidumbre es pequeña, el test concluye. Un alumno con un nivel muy claro puede terminar en 6 preguntas; uno con respuestas inconsistentes necesitará más.
+
+El test no tiene un número fijo de preguntas. La condición de parada se define en términos de la **entropía de Shannon** de la distribución posterior, que mide la incertidumbre que le queda al sistema:
 
 $$H(\pi) = -\sum_{i} \pi_i \log_2 \pi_i$$
 
@@ -124,7 +138,7 @@ $$H_{\text{stop}} = -(0{,}80\log_2 0{,}80 + 0{,}10\log_2 0{,}10 + 0{,}10\log_2 0
 
 **Número máximo de preguntas** — se deriva mediante una búsqueda minimax sobre el árbol completo de respuestas posibles: en cada nodo se elige la respuesta que maximiza la entropía residual (peor caso para el alumno), y se busca la profundidad máxima antes de que $H < H_{\text{stop}}$. El resultado garantiza que el test termina en a lo sumo $MAX\_Q$ preguntas sea cual sea la secuencia de respuestas.
 
-Esta derivación tiene una consecuencia importante: un alumno que solo acierta preguntas fáciles tarda más en terminar, porque las preguntas fáciles tienen verosimilitudes muy próximas entre sí ($0{,}85$, $0{,}93$, $0{,}98$) y apenas reducen la entropía. La distribución converge lentamente y el sistema sigue pidiendo evidencia. Un alumno claramente avanzado, en cambio, puede terminar en pocas preguntas si acierta varias difíciles seguidas.
+Esta derivación tiene una consecuencia importante: un alumno que solo acierta preguntas fáciles tarda más en terminar, porque las preguntas fáciles tienen verosimilitudes muy próximas entre sí ($0{,}85$, $0{,}93$, $0{,}98$) y apenas reducen la entropía. Un alumno claramente avanzado, en cambio, puede terminar en pocas preguntas si acierta varias difíciles seguidas.
 
 La barra de progreso refleja la **reducción relativa de entropía** hacia $H_{\text{stop}}$:
 
@@ -134,6 +148,8 @@ y la nota inferior muestra los bits de incertidumbre actuales frente al objetivo
 
 ### Mecanismo de recuperación
 
+> **En pocas palabras:** un alumno que falla la primera pregunta media recibe preguntas fáciles, pero si las acierta repetidamente el sistema no sabe si es realmente básico o simplemente tuvo mala suerte al principio. Tras 2 aciertos seguidos en fáciles, se inserta una pregunta media para aclarar la duda. Los fallos en fáciles no necesitan este sondeo: ya confirman el nivel básico por sí solos.
+
 Las preguntas fáciles aportan poca información discriminatoria. Un alumno que falle la primera pregunta media puede quedar atrapado recibiendo solo preguntas fáciles, sin posibilidad real de que la distribución se desplace hacia niveles superiores.
 
 Para evitarlo, el sistema cuenta las preguntas fáciles **acertadas consecutivamente**. Tras **2 aciertos seguidos en fáciles**, fuerza automáticamente una pregunta de dificultad media como sondeo de recuperación:
@@ -141,9 +157,7 @@ Para evitarlo, el sistema cuenta las preguntas fáciles **acertadas consecutivam
 - Si el alumno la **acierta**, la distribución posterior se desplaza hacia Medio o Avanzado y el sistema puede volver a asignar preguntas más difíciles.
 - Si la **falla**, el contador se reinicia y el ciclo se repite.
 
-Un fallo en una pregunta fácil no activa el sondeo porque ya aporta evidencia directa a favor de Básico, reduciendo la entropía por sí solo sin necesidad de una pregunta adicional.
-
-Este mecanismo preserva la lógica bayesiana: la pregunta media no altera el prior artificialmente, simplemente proporciona evidencia más discriminatoria en el momento oportuno.
+Un fallo en una pregunta fácil no activa el sondeo porque ya aporta evidencia directa a favor de Básico, reduciendo la entropía por sí solo sin necesidad de una pregunta adicional. Este mecanismo preserva la lógica bayesiana: la pregunta media no altera el prior artificialmente, simplemente proporciona evidencia más discriminatoria en el momento oportuno.
 
 ### Criterio de categoría
 
@@ -151,7 +165,7 @@ Cuando hay varias preguntas candidatas en la dificultad correcta, el sistema pre
 
 ### Aleatorización
 
-Antes de aplicar el criterio de categoría, el pool de candidatas se mezcla aleatoriamente. Esto rompe el orden fijo del banco de preguntas y hace que cada sesión produzca una secuencia diferente, incluso para alumnos con el mismo nivel.
+Antes de aplicar el criterio de categoría, el conjunto de candidatas se mezcla aleatoriamente. Esto rompe el orden fijo del banco de preguntas y hace que cada sesión produzca una secuencia diferente, incluso para alumnos con el mismo nivel.
 
 ---
 
@@ -188,7 +202,7 @@ Las preguntas están definidas en el archivo `questions.js`, separado de la lóg
 ```
 bayes-test/
 ├── index.html       Interfaz y lógica del sistema bayesiano
-├── questions.js     Banco de 60 preguntas
+├── questions.js     Banco de 90 preguntas
 └── README.md        Este documento
 ```
 
@@ -196,4 +210,4 @@ bayes-test/
 
 ## Autor
 
-Juan José de Haro
+Juan José de Haro · [bilateria.org](https://bilateria.org)

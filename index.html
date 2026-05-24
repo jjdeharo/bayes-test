@@ -336,6 +336,32 @@
     .explainer h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.6rem; color: var(--primary); }
     .explainer p  { font-size: 0.875rem; color: var(--muted); line-height: 1.75; }
 
+    /* RESOURCE LINKS */
+    .resource-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-top: 0.25rem;
+    }
+    .resource-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #f0f4ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 0.6rem;
+      padding: 0.7rem 1rem;
+      text-decoration: none;
+      color: var(--primary2);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .resource-link:hover { background: #e0e7ff; border-color: #818cf8; }
+    .resource-link .rl-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .resource-link .rl-body { display: flex; flex-direction: column; gap: 0.1rem; }
+    .resource-link .rl-desc { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+
     /* FOOTER */
     .site-footer {
       background: #1e293b;
@@ -388,6 +414,26 @@
         La siguiente pregunta se elige maximizando la ganancia de información esperada
         (reducción de entropía de Shannon).
       </p>
+    </div>
+
+    <div class="card explainer">
+      <h3>Documentación y recursos</h3>
+      <div class="resource-links">
+        <a class="resource-link" href="documentacion.html">
+          <span class="rl-icon">📖</span>
+          <span class="rl-body">
+            <span>Protocolo de evaluación adaptativa bayesiana</span>
+            <span class="rl-desc">Guía completa del método: matemáticas, diseño pedagógico e instrucción maestra para IA</span>
+          </span>
+        </a>
+        <a class="resource-link" href="documentacion_evaluacion_adaptativa_bayesiana.md" download>
+          <span class="rl-icon">🤖</span>
+          <span class="rl-body">
+            <span>Protocolo en Markdown · para proporcionar a una IA</span>
+            <span class="rl-desc">Lee el documento completo para entender el diseño; usa §22 como especificación técnica de implementación</span>
+          </span>
+        </a>
+      </div>
     </div>
   </div>
 </div>

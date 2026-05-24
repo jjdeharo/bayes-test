@@ -142,18 +142,34 @@
     blockquote p:last-child { margin-bottom: 0; }
     blockquote strong { color: #3730a3; }
 
+    .prompt-wrap { position: relative; margin: 1rem 0; }
     .master-prompt {
       background: #1e1b4b;
       color: #e0e7ff;
       border-radius: 8px;
-      padding: 1.5rem 1.75rem;
+      padding: 1.5rem 1.75rem 1.5rem 1.75rem;
       font-size: 0.88rem;
       line-height: 1.65;
       white-space: pre-wrap;
       word-break: break-word;
-      margin: 1rem 0;
     }
     .master-prompt strong { color: #a5b4fc; }
+    .copy-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: #3730a3;
+      color: #e0e7ff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover  { background: #4f46e5; }
+    .copy-btn.copied { background: #059669; color: white; }
 
     hr {
       border: none;
@@ -213,6 +229,7 @@
       <li><a href="#s22">Instrucción maestra portable</a></li>
       <li><a href="#s23">Alcance y límites</a></li>
     </ol>
+    <p style="margin-top:0.9rem; font-size:0.88rem;">Ver también: <a href="matematicas.html">Explicación matemática detallada con ejemplos numéricos →</a></p>
   </div>
 
   <section id="s1">
@@ -626,7 +643,9 @@
   <section id="s22">
     <h2>22. Instrucción maestra portable</h2>
     <p>La siguiente instrucción puede usarse como prompt universal en distintos modelos de IA. Incluye las especificaciones técnicas necesarias para que el sistema se implemente correctamente.</p>
-    <div class="master-prompt">Actúa como diseñador e implementador de sistemas educativos adaptativos bayesianos. Debes crear una aplicación, actividad o cuestionario adaptativo siguiendo exactamente estas especificaciones técnicas y pedagógicas.
+    <div class="prompt-wrap">
+    <button class="copy-btn" id="copy-prompt-btn" onclick="copyPrompt()">Copiar</button>
+    <div class="master-prompt" id="master-prompt-text">Actúa como diseñador e implementador de sistemas educativos adaptativos bayesianos. Debes crear una aplicación, actividad o cuestionario adaptativo siguiendo exactamente estas especificaciones técnicas y pedagógicas.
 
 <strong>1. Estado del alumno.</strong>
 Representa el estado del alumno como un vector de probabilidades P(H_i) sobre n hipótesis de aprendizaje (niveles de dominio, errores conceptuales, lagunas, necesidades de refuerzo u otras hipótesis pedagógicas pertinentes). Inicializa con distribución uniforme P(H_i) = 1/n si no hay información previa. Asigna a cada hipótesis un valor numérico θ_i que refleje su posición relativa en la escala de dominio.
@@ -673,6 +692,7 @@ Presenta una interpretación pedagógica: qué domina el alumno, qué dificultad
 
 <strong>9. Adaptación al contexto.</strong>
 Antes de implementar, recoge del docente: tema o unidad, curso o edad, objetivos de aprendizaje, número de hipótesis, tipos de pregunta permitidos, número aproximado de preguntas, duración máxima y finalidad (diagnóstico, refuerzo, práctica, ampliación o evaluación formativa). Adapta los valores de θ_i, b_q, n, p_min y el número mínimo y máximo de preguntas a ese contexto.</div>
+    </div><!-- /prompt-wrap -->
   </section>
 
   <section id="s23">
@@ -701,6 +721,37 @@ Antes de implementar, recoge del docente: tema o unidad, curso o edad, objetivos
   <span class="sep">·</span>
   <a href="index.html">← Volver al test</a>
 </footer>
+
+<script>
+function copyPrompt() {
+  const el  = document.getElementById('master-prompt-text');
+  const btn = document.getElementById('copy-prompt-btn');
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '¡Copiado!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(function() {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '¡Copiado!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
 
 </body>
 </html>

@@ -282,6 +282,33 @@
     .lb-advanced { background: #f3e8ff; color: #5b21b6; }
     .res-score { font-size: 2.8rem; font-weight: 800; color: var(--primary); line-height: 1; }
     .res-score-lbl { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
+    .res-provisional {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #92400e;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      padding: 0.28rem 0.85rem;
+      border-radius: 999px;
+      margin-top: 0.6rem;
+    }
+
+    /* INTERPRETACIÓN PEDAGÓGICA */
+    .interp-block { margin-bottom: 1.1rem; }
+    .interp-block:last-child { margin-bottom: 0; }
+    .interp-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    .interp-block p { font-size: 0.875rem; color: var(--text); line-height: 1.7; margin: 0; }
+    .interp-provisional { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 0.6rem 0.9rem; border-radius: 0 0.5rem 0.5rem 0; }
 
     /* HISTORY TABLE */
     .hist-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -357,7 +384,8 @@
         probabilidad (33 %). Tras cada respuesta se aplica la regla de Bayes:
         la probabilidad de cada nivel se multiplica por la verosimilitud de haber
         obtenido esa respuesta dado ese nivel, y se renormaliza.
-        La siguiente pregunta se elige en función del nivel más probable en ese momento.
+        La siguiente pregunta se elige maximizando la ganancia de información esperada
+        (reducción de entropía de Shannon).
       </p>
     </div>
   </div>
@@ -451,6 +479,7 @@
       <div class="results-top">
         <div class="res-label">Nivel estimado</div>
         <div class="level-big" id="res-level-badge">Medio</div>
+        <div id="res-provisional" class="res-provisional" style="display:none">⚠ Estimación provisional</div>
         <div class="res-score" id="res-score">7/10</div>
         <div class="res-score-lbl">respuestas correctas</div>
       </div>
@@ -478,6 +507,11 @@
           <span class="prob-pct" id="res-pct-advanced">0%</span>
         </div>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="bayes-title" style="margin-bottom:0.85rem">Interpretación pedagógica</div>
+      <div id="interpretacion-body"></div>
     </div>
 
     <div class="card">
@@ -515,7 +549,7 @@
   <span class="sep">·</span>
   Código: <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL-3.0</a>
   <span class="sep">·</span>
-  <a href="https://github.com/jjdeharo/bayes-test/blob/main/README.md" target="_blank" rel="noopener">Documentación y justificación matemática</a>
+  <a href="documentacion.html">Protocolo de evaluación adaptativa bayesiana</a>
 </footer>
 
 <script src="questions.js"></script>
@@ -529,24 +563,29 @@ const LEVEL_DOT_CLASSES  = ['dot-basic', 'dot-medium', 'dot-advanced'];
 const LEVEL_BIG_CLASSES  = ['lb-basic', 'lb-medium', 'lb-advanced'];
 const MIN_Q = 6;
 
-// IRT guessing correction for 4-choice items
-// K[diff][level] = P(knows the answer | difficulty, level)  — pure knowledge, no guessing
-const K = [
-  [0.85, 0.93, 0.98],   // easy
-  [0.35, 0.65, 0.88],   // medium
-  [0.10, 0.30, 0.70],   // hard
+const NIVELES = [
+  { nombre: 'Básico',   theta: -1 },
+  { nombre: 'Medio',    theta:  0 },
+  { nombre: 'Avanzado', theta:  1 },
 ];
-// With 4 options the random-guessing floor is G = 1/4.
-// P(correct | diff, level) = G + (1-G) × K  (3PL lower asymptote)
-// This ensures P ≥ 0.25 for every cell and makes correct answers
-// less diagnostic than failures (a guesser can be right by luck).
-const G = 1 / 4;
-const LIKELIHOOD = K.map(row => row.map(k => G + (1 - G) * k));
-// Resulting matrix:
-//   rows=diff (0=easy,1=med,2=hard)  cols=level (0=Básico,1=Medio,2=Avanzado)
-//   Fácil:   [0.8875, 0.9475, 0.985 ]
-//   Media:   [0.5125, 0.7375, 0.91  ]
-//   Difícil: [0.325,  0.475,  0.775 ]
+const SENSIBILIDAD = 1.5;
+
+// ─── IRT 3PL ──────────────────────────────────────────────────────────────────
+
+function probabilidadAcierto(theta, dificultad, opciones, sensibilidad = SENSIBILIDAD) {
+  const c = opciones && opciones > 0 ? 1 / opciones : 0;
+  const logistica = 1 / (1 + Math.exp(-sensibilidad * (theta - dificultad)));
+  return c + (1 - c) * logistica;
+}
+
+function generarVerosimilitudes(pregunta, niveles = NIVELES, sensibilidad = SENSIBILIDAD) {
+  return niveles.map(nivel => {
+    const pAcierto = probabilidadAcierto(
+      nivel.theta, pregunta.dificultad, pregunta.opciones, sensibilidad
+    );
+    return { nivel: nivel.nombre, acierto: pAcierto, fallo: 1 - pAcierto };
+  });
+}
 
 // ─── INFORMATION THEORY ───────────────────────────────────────────────────────
 
@@ -554,80 +593,95 @@ function entropy(dist) {
   return -dist.reduce((h, p) => h + (p > 1e-10 ? p * Math.log2(p) : 0), 0);
 }
 
-// H0: maximum entropy — uniform prior over 3 levels
-const H0 = Math.log2(3); // ≈ 1.585 bits
+const H0     = Math.log2(3);
+const H_STOP = entropy([0.80, 0.10, 0.10]);
 
-// H_STOP: stopping threshold — entropy of [0.80, 0.10, 0.10], the least-concentrated
-// distribution that still puts 80% mass on one level. Equivalent to MAP ≥ 80%.
-const H_STOP = entropy([0.80, 0.10, 0.10]); // ≈ 0.922 bits
+function gananciaInformacion(priores, pregunta) {
+  const veros    = generarVerosimilitudes(pregunta);
+  const pAcierto = priores.reduce((s, p, i) => s + p * veros[i].acierto, 0);
+  const pFallo   = 1 - pAcierto;
 
-// MAX_Q: worst-case questions needed to reach H < H_STOP across ALL possible
-// response sequences, computed via minimax over the Bayesian update tree.
+  const rawA  = priores.map((p, i) => p * veros[i].acierto);
+  const rawF  = priores.map((p, i) => p * veros[i].fallo);
+  const sA    = rawA.reduce((a, b) => a + b, 0);
+  const sF    = rawF.reduce((a, b) => a + b, 0);
+  const postA = rawA.map(v => v / sA);
+  const postF = rawF.map(v => v / sF);
+
+  return entropy(priores) - (pAcierto * entropy(postA) + pFallo * entropy(postF));
+}
+
+// ─── MINIMAX ──────────────────────────────────────────────────────────────────
+
+// Preguntas representativas (abstractas) para el cálculo minimax
+const REPR_QUESTIONS = [
+  { dificultad: -1, opciones: 4 },
+  { dificultad:  0, opciones: 4 },
+  { dificultad:  1, opciones: 4 },
+];
+
 function computeMaxQ() {
   const cache = new Map();
 
-  function maxAdditional(prior, consecutiveEasy) {
-    if (entropy(prior) < H_STOP) return 0;
+  function bestVeros(prior) {
+    let best = null, bestGain = -Infinity;
+    for (const q of REPR_QUESTIONS) {
+      const g = gananciaInformacion(prior, q);
+      if (g > bestGain) { bestGain = g; best = q; }
+    }
+    return generarVerosimilitudes(best);
+  }
 
-    const key = prior.map(p => Math.round(p * 1000)).join(',') + ',' + consecutiveEasy;
+  function maxAdditional(prior) {
+    if (entropy(prior) < H_STOP) return 0;
+    const key = prior.map(p => Math.round(p * 1000)).join(',');
     if (cache.has(key)) return cache.get(key);
 
-    cache.set(key, 20); // sentinel: breaks cycles caused by float rounding
-
-    const lvl  = prior.indexOf(Math.max(...prior));
-    const diff = consecutiveEasy >= 2 ? 1 : lvl;
-
+    cache.set(key, 20);
+    const veros = bestVeros(prior);
     let worst = 0;
     for (const isCorrect of [true, false]) {
-      const raw = prior.map((p, l) => p * (isCorrect ? LIKELIHOOD[diff][l] : 1 - LIKELIHOOD[diff][l]));
+      const raw = prior.map((p, i) => p * (isCorrect ? veros[i].acierto : veros[i].fallo));
       const s   = raw.reduce((a, b) => a + b, 0);
       const np  = raw.map(v => v / s);
-      const nc  = diff === 0 ? consecutiveEasy + 1 : 0;
-      worst = Math.max(worst, 1 + maxAdditional(np, nc));
+      worst = Math.max(worst, 1 + maxAdditional(np));
     }
-
     worst = Math.min(worst, 20);
     cache.set(key, worst);
     return worst;
   }
 
-  // First question is always medium (diff=1) from uniform prior
+  const uniform     = [1/3, 1/3, 1/3];
+  const firstVeros  = bestVeros(uniform);
   let maxQ = MIN_Q;
   for (const firstCorrect of [true, false]) {
-    const raw    = [1/3, 1/3, 1/3].map((p, l) =>
-      p * (firstCorrect ? LIKELIHOOD[1][l] : 1 - LIKELIHOOD[1][l]));
+    const raw    = uniform.map((p, i) => p * (firstCorrect ? firstVeros[i].acierto : firstVeros[i].fallo));
     const s      = raw.reduce((a, b) => a + b, 0);
     const after1 = raw.map(v => v / s);
-    maxQ = Math.max(maxQ, 1 + maxAdditional(after1, 0));
+    maxQ = Math.max(maxQ, 1 + maxAdditional(after1));
   }
   return maxQ;
 }
 
 const MAX_Q = computeMaxQ();
 
-// Las preguntas se cargan desde questions.js
-
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-let prior, askedIds, currentQ, answered, correct, history, consecutiveEasy;
+let prior, askedIds, currentQ, answered, correct, history;
 
 function resetState() {
-  prior         = [1/3, 1/3, 1/3];
-  askedIds      = new Set();
-  currentQ      = null;
-  answered      = 0;
-  correct       = 0;
-  history       = [];
-  consecutiveEasy = 0;
+  prior    = [1/3, 1/3, 1/3];
+  askedIds = new Set();
+  currentQ = null;
+  answered = 0;
+  correct  = 0;
+  history  = [];
 }
 
 // ─── BAYES ────────────────────────────────────────────────────────────────────
 
-function updatePrior(isCorrect, diff) {
-  const raw = prior.map((p, lvl) => {
-    const pHit = LIKELIHOOD[diff][lvl];
-    return p * (isCorrect ? pHit : 1 - pHit);
-  });
+function updatePrior(isCorrect, veros) {
+  const raw = prior.map((p, i) => p * (isCorrect ? veros[i].acierto : veros[i].fallo));
   const sum = raw.reduce((a, b) => a + b, 0);
   prior = raw.map(v => v / sum);
 }
@@ -638,29 +692,37 @@ function bestLevel() {
 
 // ─── QUESTION SELECTION ───────────────────────────────────────────────────────
 
-function selectNext() {
-  const lvl = bestLevel();
-  // After 2 consecutive correct easy answers, force a medium to allow recovery
-  // (wrong easy answers already push entropy down toward Básico — no probe needed)
-  const forceMedium = consecutiveEasy >= 2;
-  const targetDiff  = forceMedium ? 1 : lvl;
-  // build priority order around target
-  const order = [targetDiff];
-  if (targetDiff > 0) order.push(targetDiff - 1);
-  if (targetDiff < 2) order.push(targetDiff + 1);
-  [0, 1, 2].forEach(d => { if (!order.includes(d)) order.push(d); });
-
-  for (const diff of order) {
-    const pool = QUESTIONS.filter(q => q.diff === diff && !askedIds.has(q.id));
-    if (!pool.length) continue;
-    // shuffle first, then prefer under-represented category (ties broken randomly)
-    pool.sort(() => Math.random() - 0.5);
-    const catCount = {};
-    history.forEach(h => { catCount[h.cat] = (catCount[h.cat] || 0) + 1; });
-    pool.sort((a, b) => (catCount[a.cat] || 0) - (catCount[b.cat] || 0));
-    return pool[0];
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  return null;
+  return arr;
+}
+
+function selectNext() {
+  const available = shuffle(QUESTIONS.filter(q => !askedIds.has(q.id)));
+  if (!available.length) return null;
+
+  const catCount = {};
+  history.forEach(h => { catCount[h.cat] = (catCount[h.cat] || 0) + 1; });
+
+  // Ganancia de información para cada pregunta disponible
+  const gains  = available.map(q => gananciaInformacion(prior, q));
+  const maxGain = Math.max(...gains);
+
+  // Candidatas: todas las que están dentro del margen del máximo
+  const candidates = available.filter((_, i) => gains[i] >= maxGain - 1e-9);
+
+  // Selección aleatoria ponderada: las categorías menos vistas tienen más peso
+  const weights = candidates.map(q => 1 / (1 + (catCount[q.cat] || 0)));
+  const total   = weights.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < candidates.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
 }
 
 // ─── UI HELPERS ───────────────────────────────────────────────────────────────
@@ -693,7 +755,6 @@ function renderQuestion(q) {
   currentQ = q;
   askedIds.add(q.id);
 
-  // progress (entropy-based)
   const h       = entropy(prior);
   const certPct = Math.min(100, Math.round(((H0 - h) / (H0 - H_STOP)) * 100));
   document.getElementById('q-counter').textContent = `Pregunta ${answered + 1}`;
@@ -704,27 +765,22 @@ function renderQuestion(q) {
     `Incertidumbre: ${h.toFixed(2)} bits · objetivo: < ${H_STOP.toFixed(2)} bits` +
     (answered < MIN_Q ? ` (mín. ${MIN_Q} preguntas)` : '');
 
-  // badges
   const diffBadge = document.getElementById('diff-badge');
   diffBadge.textContent = DIFF_LABELS[q.diff];
   diffBadge.className   = 'badge ' + DIFF_BADGE_CLASSES[q.diff];
   document.getElementById('cat-badge').textContent = q.cat;
 
-  // adaptive note
   const lvl = bestLevel();
   const pct = Math.round(prior[lvl] * 100);
   document.getElementById('adaptive-note').textContent =
-    `🎯 Nivel estimado: ${LEVELS[lvl]} (${pct}%) → se selecciona pregunta de dificultad ${DIFF_LABELS[q.diff].toLowerCase()}`;
+    `🎯 Nivel estimado: ${LEVELS[lvl]} (${pct}%) → pregunta seleccionada por máxima ganancia de información`;
 
-  // hide feedback
   const fa = document.getElementById('feedback-area');
   fa.style.display = 'none';
   fa.innerHTML = '';
 
-  // question
   document.getElementById('question-text').textContent = q.q;
 
-  // options
   const container = document.getElementById('options-container');
   container.innerHTML = '';
   const letters = ['A', 'B', 'C', 'D'];
@@ -743,25 +799,18 @@ function renderQuestion(q) {
 // ─── HANDLE ANSWER ────────────────────────────────────────────────────────────
 
 function handleAnswer(chosen) {
-  const isCorrect    = chosen === currentQ.ans;
-  const priorBefore  = [...prior];
+  const isCorrect   = chosen === currentQ.ans;
+  const priorBefore = [...prior];
 
-  // freeze buttons
   document.querySelectorAll('.opt-btn').forEach((btn, i) => {
     btn.disabled = true;
     if (i === currentQ.ans) btn.classList.add('correct');
     else if (i === chosen && !isCorrect) btn.classList.add('incorrect');
   });
 
-  // bayes update
-  updatePrior(isCorrect, currentQ.diff);
+  const veros = generarVerosimilitudes(currentQ);
+  updatePrior(isCorrect, veros);
 
-  // track consecutive correct easy answers for recovery injection
-  // Only correct easy answers create ambiguity; wrong ones reinforce Básico naturally
-  if (currentQ.diff === 0 && isCorrect) consecutiveEasy++;
-  else consecutiveEasy = 0;
-
-  // record
   history.push({
     num: answered + 1,
     q: currentQ.q,
@@ -775,8 +824,7 @@ function handleAnswer(chosen) {
   if (isCorrect) correct++;
   answered++;
 
-  // feedback banner
-  const lvlAfter = bestLevel();
+  const lvlAfter  = bestLevel();
   const confAfter = Math.round(prior[lvlAfter] * 100);
   const fa = document.getElementById('feedback-area');
   fa.style.display = 'block';
@@ -794,9 +842,8 @@ function handleAnswer(chosen) {
   setProbBars('');
   updateLevelIndicator();
 
-  // next
   setTimeout(() => {
-    const certain = answered >= MIN_Q && entropy(prior) < H_STOP;
+    const certain = answered >= MIN_Q && entropy(prior) < H_STOP && Math.max(...prior) >= 0.80;
     const hitMax  = answered >= MAX_Q;
     if (certain || hitMax) {
       showResults();
@@ -813,30 +860,135 @@ function handleAnswer(chosen) {
 function startQuiz() {
   resetState();
   showScreen('screen-quiz');
-  // start with a random medium question
   const mediums = QUESTIONS.filter(q => q.diff === 1);
   const first = mediums[Math.floor(Math.random() * mediums.length)];
   renderQuestion(first);
+}
+
+function interpretacionPedagogica() {
+  const lvl     = bestLevel();
+  const mapProb = Math.max(...prior);
+  const finalH  = entropy(prior);
+  const esFirme = finalH < H_STOP && mapProb >= 0.80;
+
+  // Estadísticas por dificultad
+  const stats = [0, 1, 2].map(d => ({
+    label: DIFF_LABELS[d].toLowerCase(),
+    total: history.filter(h => h.diff === d).length,
+    ok:    history.filter(h => h.diff === d && h.correct).length,
+  }));
+
+  // Categorías con errores (de mayor a menor tasa de fallo)
+  const catMap = {};
+  history.forEach(h => {
+    if (!catMap[h.cat]) catMap[h.cat] = { ok: 0, total: 0 };
+    catMap[h.cat].total++;
+    if (h.correct) catMap[h.cat].ok++;
+  });
+  const catsFallidas = Object.entries(catMap)
+    .filter(([, v]) => v.ok < v.total)
+    .sort((a, b) => (a[1].ok / a[1].total) - (b[1].ok / b[1].total))
+    .map(([cat, v]) => `${cat} (${v.ok}/${v.total})`);
+
+  const fallosFaciles = history.filter(h => h.diff === 0 && !h.correct);
+  const resumenStats  = stats
+    .filter(s => s.total > 0)
+    .map(s => `${s.ok}/${s.total} ${s.label}${s.total !== 1 ? 's' : ''}`)
+    .join(', ');
+
+  const bloques = [];
+
+  // 1. Diagnóstico provisional (solo si aplica)
+  if (!esFirme) {
+    bloques.push({
+      label: '⚠ Diagnóstico provisional',
+      text: `La incertidumbre final (${finalH.toFixed(2)} bits) supera el umbral deseable ` +
+            `(${H_STOP.toFixed(2)} bits). El test alcanzó el límite de preguntas antes de ` +
+            `converger con suficiente confianza. La estimación debe interpretarse con cautela ` +
+            `y podría revisarse con más preguntas o mejor calibradas.`,
+      provisional: true,
+    });
+  }
+
+  // 2. Dominio observado
+  const dominioBase = lvl === 2
+    ? 'El alumno demuestra un dominio avanzado: resuelve correctamente preguntas de todos los niveles de dificultad.'
+    : lvl === 1
+    ? 'El alumno muestra un dominio intermedio: solvente en preguntas básicas, con dificultades al aumentar la exigencia.'
+    : 'El alumno muestra dificultades generalizadas, incluso en preguntas básicas. Necesita refuerzo en los fundamentos.';
+
+  bloques.push({
+    label: 'Dominio observado',
+    text:  `${dominioBase} Resultados por dificultad: ${resumenStats}.`,
+  });
+
+  // 3. Dificultades detectadas
+  if (catsFallidas.length > 0) {
+    let texto = `Categorías con errores: ${catsFallidas.slice(0, 4).join('; ')}.`;
+    if (fallosFaciles.length > 0) {
+      const catsBasicas = [...new Set(fallosFaciles.map(h => h.cat))].join(', ');
+      texto += ` Se detectan errores en preguntas fáciles de ${catsBasicas}: ` +
+               `conviene reforzar esos fundamentos antes de avanzar.`;
+    }
+    bloques.push({ label: 'Dificultades detectadas', text: texto });
+  } else {
+    bloques.push({
+      label: 'Dificultades detectadas',
+      text:  'No se detectan errores sistemáticos. El rendimiento es homogéneo en todas las categorías evaluadas.',
+    });
+  }
+
+  // 4. Recomendación
+  const recomendacion = lvl === 2
+    ? 'El alumno está preparado para actividades de ampliación y profundización. Puede abordar contenidos más exigentes o especializados.'
+    : lvl === 1
+    ? 'Se recomienda consolidar el nivel medio con práctica adicional en las áreas con más errores. Con trabajo focalizado puede alcanzar el nivel avanzado.'
+    : 'Se recomienda un plan de refuerzo en los contenidos básicos, revisando especialmente las áreas donde se han detectado lagunas.';
+
+  bloques.push({ label: 'Recomendación', text: recomendacion });
+
+  // 5. Grado de certeza
+  bloques.push({
+    label: 'Grado de certeza',
+    text: esFirme
+      ? `Diagnóstico firme: ${LEVELS[lvl]} con ${Math.round(mapProb * 100)} % de confianza. ` +
+        `Entropía final: ${finalH.toFixed(2)} bits (umbral: ${H_STOP.toFixed(2)} bits).`
+      : `Diagnóstico provisional: la hipótesis más probable es ${LEVELS[lvl]} ` +
+        `(${Math.round(mapProb * 100)} % de confianza), pero la incertidumbre ` +
+        `(${finalH.toFixed(2)} bits) supera el umbral deseado (${H_STOP.toFixed(2)} bits).`,
+  });
+
+  return { bloques, esFirme };
 }
 
 function showResults() {
   showScreen('screen-results');
 
   const lvl  = bestLevel();
-  const conf = Math.round(prior[lvl] * 100);
+  const { bloques, esFirme } = interpretacionPedagogica();
 
-  // level badge
+  // Nivel badge
   const badge = document.getElementById('res-level-badge');
   badge.textContent = LEVELS[lvl];
   badge.className   = 'level-big ' + LEVEL_BIG_CLASSES[lvl];
 
-  // score
+  // Indicador provisional
+  document.getElementById('res-provisional').style.display = esFirme ? 'none' : 'inline-flex';
+
+  // Puntuación
   document.getElementById('res-score').textContent = `${correct}/${answered}`;
 
-  // prob bars (delayed to allow CSS transition)
+  // Barras de probabilidad (con retardo para transición CSS)
   setTimeout(() => setProbBars('res-'), 120);
 
-  // history table
+  // Interpretación pedagógica
+  document.getElementById('interpretacion-body').innerHTML = bloques.map(b => `
+    <div class="interp-block${b.provisional ? ' interp-provisional' : ''}">
+      <div class="interp-label">${b.label}</div>
+      <p>${b.text}</p>
+    </div>`).join('');
+
+  // Historial de preguntas
   const tbody = document.getElementById('hist-body');
   tbody.innerHTML = '';
   history.forEach(h => {
@@ -857,20 +1009,21 @@ function showResults() {
     tbody.appendChild(tr);
   });
 
-  // explainer
+  // Texto explicativo del proceso estadístico
   const diffCounts = [0, 0, 0];
   history.forEach(h => diffCounts[h.diff]++);
   const finalH     = entropy(prior);
-  const stopReason = finalH < H_STOP
-    ? `la entropía bajó a ${finalH.toFixed(2)} bits (umbral: ${H_STOP.toFixed(2)} bits)`
-    : `llegó al máximo de ${MAX_Q} preguntas`;
+  const stopReason = esFirme
+    ? `la entropía bajó a ${finalH.toFixed(2)} bits (umbral: ${H_STOP.toFixed(2)} bits) ` +
+      `y la hipótesis más probable superó el 80 %`
+    : `llegó al límite de ${MAX_Q} preguntas con incertidumbre todavía alta`;
   document.getElementById('explainer-text').textContent =
     `El sistema empezó con una distribución uniforme (33 % para cada nivel). ` +
     `Realizaste ${answered} preguntas: ${diffCounts[0]} fáciles, ${diffCounts[1]} medias ` +
-    `y ${diffCounts[2]} difíciles, seleccionadas adaptativamente según el nivel estimado ` +
-    `en cada momento. El test finalizó porque ${stopReason}. ` +
-    `La distribución final converge en ${LEVELS[lvl]} con un ${Math.round(prior[lvl] * 100)} % ` +
-    `de confianza · entropía final: ${finalH.toFixed(2)} bits (${correct} correctas de ${answered}).`;
+    `y ${diffCounts[2]} difíciles, seleccionadas por máxima ganancia de información esperada. ` +
+    `El test finalizó porque ${stopReason}. ` +
+    `Distribución final: ${LEVELS.map((l, i) => `${l} ${Math.round(prior[i]*100)}%`).join(', ')} ` +
+    `(${correct} correctas de ${answered}).`;
 }
 </script>
 

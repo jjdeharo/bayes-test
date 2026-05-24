@@ -7,9 +7,9 @@ Acceso: **https://jjdeharo.github.io/bayes-test/**
 
 ## Qué es y para qué sirve
 
-Este programa es una demostración de cómo la inferencia bayesiana y la teoría de la información pueden aplicarse conjuntamente a la evaluación educativa. A diferencia de un test convencional, donde todas las preguntas están fijadas de antemano, este sistema observa cada respuesta del alumno como una evidencia y actualiza en tiempo real su estimación sobre el nivel de conocimiento. A partir de esa estimación, selecciona dinámicamente la siguiente pregunta.
+Este programa es una demostración de cómo la inferencia bayesiana y la teoría de la información pueden aplicarse conjuntamente a la evaluación educativa. A diferencia de un test convencional, donde todas las preguntas están fijadas de antemano, este sistema observa cada respuesta del alumno como una evidencia y actualiza en tiempo real su estimación sobre el nivel de conocimiento. A partir de esa estimación, selecciona dinámicamente la siguiente pregunta más informativa.
 
-El **teorema de Bayes** es el mecanismo que actualiza las probabilidades tras cada respuesta: combina lo que el sistema ya creía con la nueva evidencia para obtener una estimación revisada. La **entropía de Shannon** mide cuánta incertidumbre queda en esa estimación y determina cuándo el sistema sabe suficiente para detener el test. Ambos conceptos trabajan juntos: Bayes actualiza, Shannon decide cuándo parar.
+El **teorema de Bayes** actualiza las probabilidades tras cada respuesta: combina lo que el sistema ya creía con la nueva evidencia para obtener una estimación revisada. La **entropía de Shannon** mide cuánta incertidumbre queda en esa estimación y determina cuándo el sistema sabe suficiente para detener el test. Ambos conceptos trabajan juntos: Bayes actualiza, Shannon decide cuándo parar.
 
 El objetivo pedagógico no es solo calificar al alumno al final, sino ir reduciendo la incertidumbre sobre su nivel a lo largo del propio test, de forma que con pocas preguntas se obtenga una estimación más precisa que con un test lineal más largo.
 
@@ -47,71 +47,58 @@ $$P(\text{Básico}) = P(\text{Medio}) = P(\text{Avanzado}) = \frac{1}{3} \approx
 
 Este prior expresa ignorancia total: las tres hipótesis son igualmente plausibles.
 
-### La función de verosimilitud
+### Modelo IRT de tres parámetros (3PL) — verosimilitudes dinámicas
 
-> **Resumen sin fórmulas:** esta tabla recoge cuánto se espera que acierte cada tipo de alumno según la dificultad de la pregunta. Es la pieza clave que da al sistema su capacidad de discriminar niveles. Los valores incluyen una corrección para tener en cuenta que el alumno puede acertar por azar aunque no sepa la respuesta.
+> **Resumen sin fórmulas:** en lugar de usar una tabla fija de probabilidades, el sistema calcula automáticamente para cada pregunta la probabilidad de que un alumno de cada nivel la acierte. Esa probabilidad depende de la dificultad de la pregunta, del número de opciones y del nivel hipotético del alumno. La corrección por azar garantiza que ninguna pregunta tenga una probabilidad de acierto inferior a la que correspondería responder al azar.
 
-Cada pregunta tiene asignado un nivel de dificultad (fácil, media o difícil). La verosimilitud recoge la probabilidad de que un alumno de cada nivel responda correctamente:
+Las verosimilitudes se calculan de forma dinámica para cada pregunta mediante la función logística IRT 3PL:
 
-|                  | Nivel Básico | Nivel Medio | Nivel Avanzado |
-|------------------|:------------:|:-----------:|:--------------:|
-| Pregunta fácil   |   88,75 %    |   94,75 %   |    98,5 %      |
-| Pregunta media   |   51,25 %    |   73,75 %   |    91,0 %      |
-| Pregunta difícil |   32,5 %     |   47,5 %    |    77,5 %      |
+$$P(\text{acierto} \mid H_i, q) = c_q + (1 - c_q) \cdot \frac{1}{1 + e^{-a(\theta_i - b_q)}}$$
 
-Estos valores se obtienen a partir de una calibración previa (ver sección siguiente) y garantizan que ningún alumno, sea cual sea su nivel, tenga una probabilidad de acierto inferior al 25 % (el suelo del azar con 4 opciones).
+Donde:
 
-Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: $1 - P(E \mid H)$.
+- $\theta_i$ es el valor numérico del nivel $H_i$: Básico $= -1$, Medio $= 0$, Avanzado $= 1$
+- $b_q$ es la dificultad de la pregunta $q$: Fácil $= -1$, Media $= 0$, Difícil $= 1$
+- $a = 1{,}5$ es el parámetro de discriminación (controla la pendiente de la curva)
+- $c_q = \tfrac{1}{m_q}$ es el suelo de acierto por azar ($m_q$ = número de opciones; $c_q = 0{,}25$ para 4 opciones)
 
-### Corrección por azar — modelo IRT de tres parámetros (3PL)
+Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: $P(\text{fallo} \mid H_i, q) = 1 - P(\text{acierto} \mid H_i, q)$.
 
-> **Resumen sin fórmulas:** con 4 opciones, cualquier alumno tiene al menos un 25 % de probabilidad de acertar por pura suerte. Sin corregir esto, el modelo trataría algunos aciertos como evidencia mucho más fuerte de lo que realmente son. La corrección ajusta todos los valores para que el azar quede incorporado en el cálculo.
+Los valores resultantes para preguntas de 4 opciones ($c = 0{,}25$, $a = 1{,}5$) son:
 
-Con ítems de cuatro opciones la probabilidad mínima teórica de acierto es $G = \tfrac{1}{4}$, incluso para alguien que no sabe nada. El modelo IRT de tres parámetros (3PL) incorpora este suelo mediante la siguiente transformación sobre la probabilidad de conocimiento puro $k$:
+|                  | Básico ($\theta=-1$) | Medio ($\theta=0$) | Avanzado ($\theta=1$) |
+|------------------|:--------------------:|:------------------:|:---------------------:|
+| Fácil ($b=-1$)   |       62,5 %         |      86,3 %        |       96,4 %          |
+| Media ($b=0$)    |       38,7 %         |      62,5 %        |       86,3 %          |
+| Difícil ($b=1$)  |       28,6 %         |      38,7 %        |       62,5 %          |
 
-$$P(\text{correcto} \mid \text{diff}, \text{nivel}) = G + (1 - G) \cdot k = \frac{1}{4} + \frac{3}{4} \cdot k$$
+Cada pregunta lleva sus propios parámetros `dificultad` ($b_q$) y `opciones` ($m_q$), por lo que sus verosimilitudes se computan individualmente y no dependen de ninguna tabla global.
 
-Los valores de conocimiento puro $k$ (antes de la corrección) son:
-
-|                  | Básico ($k$) | Medio ($k$) | Avanzado ($k$) |
-|------------------|:------------:|:-----------:|:--------------:|
-| Pregunta fácil   |    0,85      |    0,93     |    0,98        |
-| Pregunta media   |    0,35      |    0,65     |    0,88        |
-| Pregunta difícil |    0,10      |    0,30     |    0,70        |
-
-Sin esta corrección, el valor Difícil/Básico sería 0,10, por debajo del suelo del azar (0,25), lo que implicaría que un alumno básico acierta preguntas difíciles *menos* que tirando una moneda al azar — un supuesto inconsistente.
-
-La corrección tiene además una consecuencia importante sobre la asimetría informativa: un **fallo** mantiene los mismos ratios de verosimilitud que antes (todos los valores de fallo se multiplican por el mismo factor $\tfrac{3}{4}$, que se cancela en la normalización), mientras que un **acierto** es ahora menos diagnóstico porque siempre puede deberse al azar.
+La corrección por azar $c_q$ garantiza que ningún alumno tenga una probabilidad de acierto inferior a la que tendría respondiendo al azar, lo que hace los aciertos menos diagnósticos que los fallos: un fallo prueba ignorancia directamente, mientras que un acierto puede deberse a la suerte.
 
 ### La actualización bayesiana paso a paso
 
-> **Resumen sin fórmulas:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 58 % de confianza que el alumno es de nivel Básico. Los fallos son especialmente informativos porque el azar no puede "rescatar" a un alumno que no sabe la respuesta.
+> **Resumen sin fórmulas:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 55 % de confianza que el alumno es de nivel Básico.
 
-Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media. Con los valores corregidos por azar ($P(\text{media}) = [0{,}5125,\ 0{,}7375,\ 0{,}91]$), la actualización sería:
+Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media ($b_q = 0$, $m_q = 4$). Con el modelo IRT las verosimilitudes del fallo son:
 
-**Verosimilitudes del fallo en pregunta media:**
-
-$$P(\text{fallo} \mid \text{media}, \text{Básico}) = 1 - 0{,}5125 = 0{,}4875$$
-
-$$P(\text{fallo} \mid \text{media}, \text{Medio}) = 1 - 0{,}7375 = 0{,}2625$$
-
-$$P(\text{fallo} \mid \text{media}, \text{Avanzado}) = 1 - 0{,}91 = 0{,}09$$
+$$P(\text{fallo} \mid \text{Media}, \text{Básico}) = 1 - 0{,}387 = 0{,}613$$
+$$P(\text{fallo} \mid \text{Media}, \text{Medio}) = 1 - 0{,}625 = 0{,}375$$
+$$P(\text{fallo} \mid \text{Media}, \text{Avanzado}) = 1 - 0{,}863 = 0{,}137$$
 
 **Productos con el prior** $\left(\frac{1}{3}\right)$:
 
-$$\text{Básico:} \quad 0{,}4875 \times \tfrac{1}{3} = 0{,}1625 \qquad \text{Medio:} \quad 0{,}2625 \times \tfrac{1}{3} = 0{,}0875 \qquad \text{Avanzado:} \quad 0{,}09 \times \tfrac{1}{3} = 0{,}03$$
+$$\text{Básico:} \quad 0{,}613 \times \tfrac{1}{3} = 0{,}2043 \qquad \text{Medio:} \quad 0{,}375 \times \tfrac{1}{3} = 0{,}125 \qquad \text{Avanzado:} \quad 0{,}137 \times \tfrac{1}{3} = 0{,}0457$$
 
-**Normalización** — suma total: $0{,}1625 + 0{,}0875 + 0{,}03 = 0{,}28$
+**Normalización** — suma total: $0{,}2043 + 0{,}125 + 0{,}0457 = 0{,}375$
 
 **Posterior:**
 
-$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}1625}{0{,}28} \approx 58\%$$
+$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}2043}{0{,}375} \approx 54{,}5\%$$
+$$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}125}{0{,}375} \approx 33{,}3\%$$
+$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}0457}{0{,}375} \approx 12{,}2\%$$
 
-$$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}0875}{0{,}28} \approx 31\%$$
-
-$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}03}{0{,}28} \approx 11\%$$
-
-Tras un solo fallo en una pregunta media, el sistema estima con un 58 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta, y así sucesivamente. Nótese que los porcentajes son prácticamente idénticos a los que se obtendrían sin la corrección: esto se debe a que, para los **fallos**, la corrección multiplica todos los valores por el mismo factor $\tfrac{3}{4}$, que desaparece en la normalización. La corrección afecta principalmente a los **aciertos**, haciéndolos menos diagnósticos.
+Tras un solo fallo en una pregunta media, el sistema estima con un 54,5 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta.
 
 ### Convergencia
 
@@ -123,71 +110,64 @@ La distribución converge porque cada respuesta multiplica las probabilidades po
 
 ## Selección adaptativa de preguntas
 
-### Criterio de dificultad
+### Ganancia esperada de información
 
-> **Resumen sin fórmulas:** el sistema siempre envía preguntas acordes con el nivel que estima en ese momento. Si cree que el alumno es avanzado, le manda preguntas difíciles; si cree que es básico, fáciles. Esto maximiza la información que obtiene de cada respuesta.
+> **Resumen sin fórmulas:** antes de mostrar cada pregunta, el sistema calcula cuánta incertidumbre esperaría reducir con cada pregunta disponible y elige la que más información aportaría. No es necesariamente la más difícil ni la del nivel estimado: puede ser una que ayude a distinguir entre dos hipótesis todavía plausibles.
 
-El sistema mapea el nivel estimado (el de mayor probabilidad posterior) con la dificultad objetivo de la siguiente pregunta:
+Para seleccionar la siguiente pregunta, el sistema calcula la **ganancia esperada de información** para cada candidata:
 
-| Nivel estimado | Dificultad objetivo |
-|:--------------:|:-------------------:|
-| Básico         | Fácil               |
-| Medio          | Media               |
-| Avanzado       | Difícil             |
+$$IG(q) = H(\pi) - \bigl[P(A)\cdot H(\pi_A) + P(F)\cdot H(\pi_F)\bigr]$$
 
-Si no quedan preguntas disponibles en la dificultad objetivo, el sistema busca en dificultades adyacentes.
+Donde:
+
+- $H(\pi) = -\sum_i \pi_i \log_2 \pi_i$ es la entropía actual
+- $P(A) = \sum_i \pi_i \cdot P(\text{acierto} \mid H_i, q)$ es la probabilidad marginal de acierto
+- $\pi_A$ y $\pi_F$ son los posteriors simulados ante acierto y fallo respectivamente
+- $P(F) = 1 - P(A)$
+
+Se selecciona la pregunta con mayor $IG$. Entre candidatas con ganancia prácticamente igual, se elige al azar con peso inversamente proporcional a las veces que su categoría ha aparecido ya, para favorecer la diversidad temática. La aleatorización usa el algoritmo de Fisher-Yates para garantizar una distribución uniforme.
 
 ### Condición de parada basada en incertidumbre
 
-> **Resumen sin fórmulas:** el test no termina después de un número fijo de preguntas, sino cuando el sistema considera que ya sabe con suficiente seguridad cuál es el nivel del alumno. Esa seguridad se mide con una cantidad llamada *entropía*: cuando la incertidumbre es pequeña, el test concluye. Un alumno con un nivel muy claro puede terminar en 6 preguntas; uno con respuestas inconsistentes necesitará más.
+> **Resumen sin fórmulas:** el test no termina después de un número fijo de preguntas, sino cuando el sistema considera que ya sabe con suficiente seguridad cuál es el nivel del alumno. Esa seguridad se mide con la entropía y con la probabilidad de la hipótesis más probable. Un alumno con un nivel muy claro puede terminar en 6 preguntas; uno con respuestas inconsistentes necesitará más.
 
-El test no tiene un número fijo de preguntas. La condición de parada se define en términos de la **entropía de Shannon** de la distribución posterior, que mide la incertidumbre que le queda al sistema:
+El test finaliza cuando se cumplen **simultáneamente** las dos condiciones siguientes, con un mínimo de **6 preguntas**:
 
-$$H(\pi) = -\sum_{i} \pi_i \log_2 \pi_i$$
+1. $H(\pi) < H_{\text{stop}}$
+2. $\max_i \pi_i \geq 0{,}80$
 
-El test finaliza cuando se cumple **cualquiera** de estas condiciones:
-
-1. $H(\pi) < H_{\text{stop}}$, con un mínimo de **6 preguntas** para evitar conclusiones prematuras.
-2. Se alcanza el tope $MAX\_Q$, calculado automáticamente.
+Comprobar los dos criterios es necesario porque $H_{\text{stop}}$ se calcula suponiendo distribución uniforme de la probabilidad residual, lo que es una aproximación.
 
 **Entropía inicial** — prior uniforme sobre 3 niveles:
 
 $$H_0 = \log_2 3 \approx 1{,}585 \text{ bits}$$
 
-**Umbral de parada** — se elige como la entropía de la distribución menos concentrada que aún tiene el 80 % de masa en un solo nivel, es decir $[0{,}80,\, 0{,}10,\, 0{,}10]$:
+**Umbral de parada** — entropía de la distribución $[0{,}80,\, 0{,}10,\, 0{,}10]$, la menos concentrada que aún pone el 80 % de masa en un nivel:
 
 $$H_{\text{stop}} = -(0{,}80\log_2 0{,}80 + 0{,}10\log_2 0{,}10 + 0{,}10\log_2 0{,}10) \approx 0{,}922 \text{ bits}$$
 
-**Número máximo de preguntas** — se deriva mediante una búsqueda minimax sobre el árbol completo de respuestas posibles: en cada nodo se elige la respuesta que maximiza la entropía residual (peor caso para el alumno), y se busca la profundidad máxima antes de que $H < H_{\text{stop}}$. El resultado garantiza que el test termina en a lo sumo $MAX\_Q$ preguntas sea cual sea la secuencia de respuestas.
-
-Esta derivación tiene una consecuencia importante: un alumno que solo acierta preguntas fáciles tarda más en terminar, porque las preguntas fáciles tienen verosimilitudes muy próximas entre sí ($0{,}85$, $0{,}93$, $0{,}98$) y apenas reducen la entropía. Un alumno claramente avanzado, en cambio, puede terminar en pocas preguntas si acierta varias difíciles seguidas.
+**Número máximo de preguntas** — se calcula mediante búsqueda minimax sobre el árbol completo de respuestas posibles. En cada nodo el sistema elige la pregunta más informativa disponible (máxima $IG$) y se explora el peor caso de respuesta posible. La profundidad máxima del árbol antes de alcanzar $H < H_{\text{stop}}$ es $MAX\_Q$, garantizando que el test termina en ese número de preguntas sea cual sea la secuencia de respuestas. Este valor se muestra en la interfaz como referencia de transparencia.
 
 La barra de progreso refleja la **reducción relativa de entropía** hacia $H_{\text{stop}}$:
 
 $$\text{progreso} = \frac{H_0 - H(\pi)}{H_0 - H_{\text{stop}}}$$
 
-y la nota inferior muestra los bits de incertidumbre actuales frente al objetivo.
+### Recuperación automática
 
-### Mecanismo de recuperación
+La selección por máxima ganancia de información hace que la recuperación sea automática: si el alumno falla preguntas al principio pero después responde correctamente preguntas más difíciles, el posterior se desplaza y el sistema selecciona preguntas cada vez más exigentes sin ninguna lógica adicional.
 
-> **Resumen sin fórmulas:** un alumno que falla la primera pregunta media recibe preguntas fáciles, pero si las acierta repetidamente el sistema no sabe si es realmente básico o simplemente tuvo mala suerte al principio. Tras 2 aciertos seguidos en fáciles, se inserta una pregunta media para aclarar la duda. Los fallos en fáciles no necesitan este sondeo: ya confirman el nivel básico por sí solos.
+---
 
-Las preguntas fáciles aportan poca información discriminatoria. Un alumno que falle la primera pregunta media puede quedar atrapado recibiendo solo preguntas fáciles, sin posibilidad real de que la distribución se desplace hacia niveles superiores.
+## Interpretación pedagógica final
 
-Para evitarlo, el sistema cuenta las preguntas fáciles **acertadas consecutivamente**. Tras **2 aciertos seguidos en fáciles**, fuerza automáticamente una pregunta de dificultad media como sondeo de recuperación:
+Al terminar el test, el sistema genera una interpretación pedagógica estructurada que incluye:
 
-- Si el alumno la **acierta**, la distribución posterior se desplaza hacia Medio o Avanzado y el sistema puede volver a asignar preguntas más difíciles.
-- Si la **falla**, el contador se reinicia y el ciclo se repite.
+- **Dominio observado:** descripción del nivel con desglose de aciertos por dificultad
+- **Dificultades detectadas:** categorías con más errores, destacando los fallos en preguntas fáciles
+- **Recomendación:** acción concreta según el nivel estimado (refuerzo, consolidación o ampliación)
+- **Grado de certeza:** si el diagnóstico es firme (ambos criterios de parada cumplidos) o provisional
 
-Un fallo en una pregunta fácil no activa el sondeo porque ya aporta evidencia directa a favor de Básico, reduciendo la entropía por sí solo sin necesidad de una pregunta adicional. Este mecanismo preserva la lógica bayesiana: la pregunta media no altera el prior artificialmente, simplemente proporciona evidencia más discriminatoria en el momento oportuno.
-
-### Criterio de categoría
-
-Cuando hay varias preguntas candidatas en la dificultad correcta, el sistema prefiere las categorías menos representadas en el historial de la sesión. Esto garantiza que el test cubra distintas áreas temáticas en lugar de concentrarse en una sola.
-
-### Aleatorización
-
-Antes de aplicar el criterio de categoría, el conjunto de candidatas se mezcla aleatoriamente. Esto rompe el orden fijo del banco de preguntas y hace que cada sesión produzca una secuencia diferente, incluso para alumnos con el mismo nivel.
+Cuando el test termina por límite de preguntas sin haber convergido, el resultado se marca visualmente como **estimación provisional** y el texto lo indica explícitamente. Un diagnóstico provisional puede ocurrir cuando el patrón de respuestas es inusual (por ejemplo, varios fallos iniciales seguidos de muchos aciertos), situación en la que la incertidumbre es genuinamente alta y sería incorrecto presentar el resultado como definitivo.
 
 ---
 
@@ -195,15 +175,17 @@ Antes de aplicar el criterio de categoría, el conjunto de candidatas se mezcla 
 
 El banco contiene **90 preguntas** de cultura general, repartidas equitativamente:
 
-- 30 preguntas de dificultad **fácil**
-- 30 preguntas de dificultad **media**
-- 30 preguntas de dificultad **difícil**
+- 30 preguntas de dificultad **fácil** ($b_q = -1$)
+- 30 preguntas de dificultad **media** ($b_q = 0$)
+- 30 preguntas de dificultad **difícil** ($b_q = 1$)
 
-Las categorías incluyen: Geografía, Historia, Ciencia, Arte, Literatura, Filosofía, Matemáticas, Cultura y Deportes. Las preguntas están diseñadas para ser accesibles a cualquier persona con educación general independientemente de su país de origen, evitando referencias a conocimientos específicos de una sola nación.
+Todas las preguntas son de opción múltiple con 4 respuestas ($m_q = 4$, $c_q = 0{,}25$). Cada pregunta lleva sus propios parámetros `dificultad` y `opciones`, por lo que el modelo puede incorporar preguntas con distinto número de opciones sin cambiar el motor bayesiano.
 
-Cada sesión utiliza entre 6 y $MAX\_Q$ preguntas, seleccionadas adaptativamente. La combinación de 90 preguntas disponibles, selección aleatoria y adaptación al nivel hace que dos sesiones rara vez compartan la misma secuencia.
+Las categorías incluyen: Geografía, Historia, Ciencia, Arte, Literatura, Filosofía, Matemáticas, Cultura y Deportes. Las preguntas están diseñadas para ser accesibles a cualquier persona con educación general, independientemente de su país de origen.
 
-Las preguntas están definidas en el archivo `questions.js`, separado de la lógica del sistema, lo que facilita ampliar o modificar el banco sin tocar el algoritmo.
+Cada sesión utiliza entre 6 y $MAX\_Q$ preguntas, seleccionadas adaptativamente. La combinación de 90 preguntas disponibles, selección aleatoria ponderada y adaptación al nivel hace que dos sesiones rara vez compartan la misma secuencia.
+
+Las preguntas están definidas en `questions.js`, separado de la lógica del sistema, lo que facilita ampliar o modificar el banco sin tocar el algoritmo.
 
 ---
 
@@ -211,11 +193,13 @@ Las preguntas están definidas en el archivo `questions.js`, separado de la lóg
 
 **Eficiencia:** un test adaptativo necesita menos preguntas que un test lineal para alcanzar la misma precisión diagnóstica, porque evita hacer preguntas demasiado fáciles o demasiado difíciles para el nivel real del alumno.
 
-**Transparencia:** el sistema muestra en tiempo real la distribución de probabilidad actualizada tras cada respuesta. El alumno o el docente pueden observar cómo la evidencia va modificando la estimación, lo que convierte el test en una herramienta de comprensión del propio proceso de evaluación.
+**Transparencia:** el sistema muestra en tiempo real la distribución de probabilidad actualizada tras cada respuesta. El alumno o el docente pueden observar cómo la evidencia va modificando la estimación.
 
-**Ausencia de umbral fijo:** a diferencia de los tests clásicos donde se establece un porcentaje de corte arbitrario, aquí el nivel se estima como una distribución continua. Un alumno no es simplemente "aprobado" o "suspenso": el sistema expresa su confianza en cada hipótesis, lo que proporciona una imagen más matizada del conocimiento.
+**Honestidad sobre la incertidumbre:** cuando el sistema no puede alcanzar un diagnóstico firme, lo indica explícitamente. No presenta una etiqueta de nivel cuando la incertidumbre sigue siendo alta.
 
-**Escalabilidad conceptual:** aunque esta demo trabaja con tres niveles, el mismo esquema se puede extender a más niveles, a la detección de errores conceptuales específicos o a múltiples dimensiones de conocimiento simultáneas, simplemente ampliando el espacio de hipótesis y la función de verosimilitud.
+**Ausencia de umbral fijo:** a diferencia de los tests clásicos donde se establece un porcentaje de corte arbitrario, aquí el nivel se estima como una distribución continua. El sistema expresa su confianza en cada hipótesis, lo que proporciona una imagen más matizada del conocimiento.
+
+**Escalabilidad conceptual:** aunque esta demo trabaja con tres niveles, el mismo esquema se puede extender a más niveles, a la detección de errores conceptuales específicos o a múltiples dimensiones de conocimiento simultáneas, simplemente ampliando el espacio de hipótesis y los parámetros de las preguntas.
 
 ---
 
@@ -223,9 +207,11 @@ Las preguntas están definidas en el archivo `questions.js`, separado de la lóg
 
 ```
 bayes-test/
-├── index.html       Interfaz y lógica del sistema bayesiano
-├── questions.js     Banco de 90 preguntas
-└── README.md        Este documento
+├── index.html                                    Interfaz y lógica del sistema bayesiano
+├── questions.js                                  Banco de 90 preguntas
+├── documentacion.html                            Protocolo para crear sistemas adaptativos bayesianos
+├── documentacion_evaluacion_adaptativa_bayesiana.md  Fuente de la documentación (Markdown)
+└── README.md                                     Este documento
 ```
 
 ---

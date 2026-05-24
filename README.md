@@ -210,6 +210,7 @@ bayes-test/
 ├── index.html                                    Interfaz y lógica del sistema bayesiano
 ├── questions.js                                  Banco de 90 preguntas
 ├── documentacion.html                            Protocolo para crear sistemas adaptativos bayesianos
+├── matematicas.html                              Explicación matemática detallada con ejemplos numéricos
 ├── documentacion_evaluacion_adaptativa_bayesiana.md  Fuente de la documentación (Markdown)
 └── README.md                                     Este documento
 ```

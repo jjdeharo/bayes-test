@@ -381,30 +381,30 @@
       <p><strong>Tabla de verosimilitudes de acierto:</strong></p>
       <table>
         <thead>
-          <tr><th>Dificultad</th><th>Básico \(\theta=-1\)</th><th>Medio \(\theta=0\)</th><th>Avanzado \(\theta=+1\)</th></tr>
+          <tr><th>Dificultad</th><th>Básico \(\theta=-2\)</th><th>Medio \(\theta=0\)</th><th>Avanzado \(\theta=+2\)</th></tr>
         </thead>
         <tbody>
-          <tr><td>Fácil \(b=-1\)</td><td class="hi">62,5 %</td><td>86,3 %</td><td>96,4 %</td></tr>
-          <tr><td>Media \(b=0\)</td><td>38,7 %</td><td class="hi">62,5 %</td><td>86,3 %</td></tr>
-          <tr><td>Difícil \(b=+1\)</td><td>28,6 %</td><td>38,7 %</td><td class="hi">62,5 %</td></tr>
+          <tr><td>Fácil \(b=-1\)</td><td>38,7 %</td><td>86,3 %</td><td>99,2 %</td></tr>
+          <tr><td>Media \(b=0\)</td><td>28,6 %</td><td class="hi">62,5 %</td><td>96,4 %</td></tr>
+          <tr><td>Difícil \(b=+1\)</td><td>25,8 %</td><td>38,7 %</td><td>86,3 %</td></tr>
         </tbody>
       </table>
-      <p>Las celdas resaltadas son los puntos \(\theta_i = b_q\): siempre dan 62,5 % con estos parámetros.</p>
+      <p>Solo la celda Medio/Media está en el punto \(\theta_i = b_q\) (resaltada, 62,5 %). Los valores \(\theta\) ampliados a ±2 separan las escalas de habilidad y dificultad, haciendo que cada tipo de pregunta sea muy diagnóstico para el nivel correspondiente.</p>
       <p><strong>Cálculos explícitos para pregunta media:</strong></p>
       <div class="calc-box">
 <span class="comment">-- θ = 0 (Medio), b = 0 (Media), a = 1.5, c = 0.25</span>
 <span class="label">Exponente:</span>  −1.5·(0 − 0) = 0 → σ = 1/(1+e⁰) = 0.5
 <span class="label">P(acierto):</span> 0.25 + 0.75·0.5 = <span class="result">0.625</span>
 
-<span class="comment">-- θ = −1 (Básico), b = 0 (Media)</span>
-<span class="label">Exponente:</span>  −1.5·(−1 − 0) = +1.5 → e^1.5 ≈ 4.4817 → σ ≈ 0.1824
-<span class="label">P(acierto):</span> 0.25 + 0.75·0.1824 = <span class="result">0.387</span>
+<span class="comment">-- θ = −2 (Básico), b = 0 (Media)</span>
+<span class="label">Exponente:</span>  −1.5·(−2 − 0) = +3 → e^3 ≈ 20.086 → σ ≈ 0.04742
+<span class="label">P(acierto):</span> 0.25 + 0.75·0.04742 = <span class="result">0.286</span>
 
-<span class="comment">-- θ = +1 (Avanzado), b = 0 (Media)</span>
-<span class="label">Exponente:</span>  −1.5·(+1 − 0) = −1.5 → e^−1.5 ≈ 0.2231 → σ ≈ 0.8176
-<span class="label">P(acierto):</span> 0.25 + 0.75·0.8176 = <span class="result">0.863</span>
+<span class="comment">-- θ = +2 (Avanzado), b = 0 (Media)</span>
+<span class="label">Exponente:</span>  −1.5·(+2 − 0) = −3 → e^−3 ≈ 0.04979 → σ ≈ 0.9526
+<span class="label">P(acierto):</span> 0.25 + 0.75·0.9526 = <span class="result">0.964</span>
       </div>
-      <p>Verosimilitudes de <strong>fallo</strong> en pregunta media: Básico 61,3 % · Medio 37,5 % · Avanzado 13,7 %. La ratio básico/avanzado es 4,5:1: el fallo es muy diagnóstico.</p>
+      <p>Verosimilitudes de <strong>fallo</strong> en pregunta media: Básico 71,4 % · Medio 37,5 % · Avanzado 3,6 %. La ratio básico/avanzado es 20:1: el fallo es altamente diagnóstico.</p>
     </div>
   </section>
 
@@ -441,34 +441,34 @@
         <div class="step">
           <div class="step-num">2</div>
           <div class="step-body">
-            <strong>Verosimilitudes de fallo:</strong>
-            \[P(\text{fallo} \mid H_0) = 0{,}613 \qquad P(\text{fallo} \mid H_1) = 0{,}375 \qquad P(\text{fallo} \mid H_2) = 0{,}137\]
+            <strong>Verosimilitudes de fallo</strong> (con \(\theta = -2, 0, +2\)):
+            \[P(\text{fallo} \mid H_0) = 0{,}714 \qquad P(\text{fallo} \mid H_1) = 0{,}375 \qquad P(\text{fallo} \mid H_2) = 0{,}036\]
           </div>
         </div>
         <div class="step">
           <div class="step-num">3</div>
           <div class="step-body">
             <strong>Numeradores:</strong>
-            \[u_0 = 0{,}613 \times \tfrac{1}{3} = 0{,}2043 \qquad u_1 = 0{,}375 \times \tfrac{1}{3} = 0{,}1250 \qquad u_2 = 0{,}137 \times \tfrac{1}{3} = 0{,}0457\]
+            \[u_0 = 0{,}714 \times \tfrac{1}{3} = 0{,}238 \qquad u_1 = 0{,}375 \times \tfrac{1}{3} = 0{,}125 \qquad u_2 = 0{,}036 \times \tfrac{1}{3} = 0{,}012\]
           </div>
         </div>
         <div class="step">
           <div class="step-num">4</div>
           <div class="step-body">
-            <strong>Normalización:</strong> \(Z = 0{,}2043 + 0{,}1250 + 0{,}0457 = 0{,}3750\)
+            <strong>Normalización:</strong> \(Z = 0{,}238 + 0{,}125 + 0{,}012 = 0{,}375\)
           </div>
         </div>
         <div class="step">
           <div class="step-num">5</div>
           <div class="step-body">
             <strong>Posterior:</strong>
-            \[\pi^{(1)} = \left(\frac{0{,}2043}{0{,}375},\;\frac{0{,}1250}{0{,}375},\;\frac{0{,}0457}{0{,}375}\right) \approx (54{,}5\%,\; 33{,}3\%,\; 12{,}2\%)\]
+            \[\pi^{(1)} = \left(\frac{0{,}238}{0{,}375},\;\frac{0{,}125}{0{,}375},\;\frac{0{,}012}{0{,}375}\right) \approx (63{,}5\%,\; 33{,}3\%,\; 3{,}2\%)\]
           </div>
         </div>
       </div>
       <div class="callout callout-green" style="margin-top:0.5rem">
         <strong>Resultado</strong>
-        Con una sola respuesta, el sistema pasa de la distribución plana (33 %, 33 %, 33 %) a otra con hipótesis dominante (54,5 %, 33,3 %, 12,2 %). Básico es ahora 4,5 veces más probable que Avanzado.
+        Con una sola respuesta, el sistema pasa de la distribución plana (33 %, 33 %, 33 %) a otra con hipótesis dominante (63,5 %, 33,3 %, 3,2 %). Básico es ahora 20 veces más probable que Avanzado.
       </div>
     </div>
   </section>

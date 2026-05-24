@@ -543,7 +543,23 @@ La siguiente instrucción puede usarse como prompt universal en distintos modelo
 
 ---
 
-> Actúa como diseñador e implementador de sistemas educativos adaptativos bayesianos. Debes crear una aplicación, actividad o cuestionario adaptativo siguiendo exactamente estas especificaciones técnicas y pedagógicas.
+> Actúa como diseñador e implementador de sistemas educativos adaptativos bayesianos. Tu tarea es crear un recurso educativo adaptativo como página web estática (HTML + CSS + JavaScript en un único archivo autocontenido), siguiendo exactamente las especificaciones técnicas y pedagógicas de este documento.
+>
+> **0. Lo primero que debes hacer.**
+> Antes de implementar nada, pregunta al docente lo siguiente. No resumas el documento. No preguntes sobre lenguajes ni entornos: el resultado será siempre una página web estática en un único archivo HTML. Haz estas preguntas y espera las respuestas antes de escribir ningún código:
+>
+> — ¿Sobre qué tema o unidad didáctica quieres el recurso?
+> — ¿A qué curso o edad va dirigido?
+> — ¿Cuál es el objetivo de aprendizaje?
+> — ¿Qué tipo de recurso quieres? (evaluación diagnóstica, práctica graduada, actividad de refuerzo, actividad de ampliación, itinerario de aprendizaje, tutorial, simulador, juego educativo, repaso espaciado u otro)
+> — ¿Cuál es la finalidad principal? (detectar nivel, identificar errores, reforzar, practicar, consolidar, ampliar, guiar un itinerario, ofrecer pistas, personalizar explicaciones, recomendar recursos, repasar…)
+> — ¿Cuántos niveles o hipótesis quieres? (por defecto: 3 niveles — básico, medio, avanzado)
+> — ¿Qué tipo de interacción tendrá el alumno? (opción múltiple, verdadero/falso, emparejamiento, ordenación, respuesta numérica, respuesta breve…)
+> — ¿Cuántas preguntas o pasos aproximadamente?
+> — ¿Qué resultado o salida debe ver el alumno al final? (diagnóstico, informe de progreso, recomendación, ruta de aprendizaje, propuesta de siguiente actividad…)
+> — ¿Alguna observación sobre el alumnado o el contexto?
+>
+> Solo cuando tengas estas respuestas, diseña e implementa el recurso completo como página web estática.
 >
 > **1. Estado del alumno.**
 > Representa el estado del alumno como un vector de probabilidades P(H_i) sobre n hipótesis de aprendizaje (niveles de dominio, errores conceptuales, lagunas, necesidades de refuerzo u otras hipótesis pedagógicas pertinentes). Inicializa con distribución uniforme P(H_i) = 1/n si no hay información previa. Asigna a cada hipótesis un valor numérico θ_i que refleje su posición relativa en la escala de dominio.
@@ -589,7 +605,7 @@ La siguiente instrucción puede usarse como prompt universal en distintos modelo
 > Presenta una interpretación pedagógica: qué domina el alumno, qué dificultades muestra, qué lagunas conviene revisar, qué se recomienda como siguiente paso. Muestra el nivel de confianza de la estimación (probabilidad de la hipótesis más probable). Si la entropía final supera H_stop, indica explícitamente que el diagnóstico es provisional. No te limites a mostrar una puntuación o etiqueta.
 >
 > **9. Adaptación al contexto.**
-> Antes de implementar, recoge del docente: tema o unidad, curso o edad, objetivos de aprendizaje, número de hipótesis, tipos de pregunta permitidos, número aproximado de preguntas, duración máxima y finalidad (diagnóstico, refuerzo, práctica, ampliación o evaluación formativa). Adapta los valores de θ_i, b_q, n, p_min y el número mínimo y máximo de preguntas a ese contexto.
+> Usa las respuestas del docente obtenidas en el paso 0 para adaptar todos los parámetros: θ_i, b_q, n, p_min, número mínimo y máximo de preguntas o pasos, tipo de interacción y tipo de salida. Si el docente no especifica algún parámetro, usa valores razonables por defecto y explícalos brevemente antes de implementar.
 
 ## 23. Alcance y límites
 

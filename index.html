@@ -564,10 +564,14 @@ const LEVEL_DOT_CLASSES  = ['dot-basic', 'dot-medium', 'dot-advanced'];
 const LEVEL_BIG_CLASSES  = ['lb-basic', 'lb-medium', 'lb-advanced'];
 const MIN_Q = 6;
 
+// θ se calcula automáticamente: rango doble al de b para que ninguna dificultad
+// coincida con un nivel extremo (invariante: max(θ) > max(b) siempre).
+const B_MAX = Math.max(...QUESTIONS.map(q => Math.abs(q.dificultad)));
+const THETA_SCALE = B_MAX * 2;
 const NIVELES = [
-  { nombre: 'Básico',   theta: -2 },
-  { nombre: 'Medio',    theta:  0 },
-  { nombre: 'Avanzado', theta:  2 },
+  { nombre: 'Básico',   theta: -THETA_SCALE },
+  { nombre: 'Medio',    theta:  0            },
+  { nombre: 'Avanzado', theta:  THETA_SCALE  },
 ];
 const SENSIBILIDAD = 1.5;
 

@@ -29,6 +29,8 @@
       --muted:    #64748b;
       --border:   #e2e8f0;
       --code-bg:  #f8fafc;
+      --ex-bg:    #f5f3ff;
+      --ex-border:#c4b5fd;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -85,6 +87,26 @@
     ul, ol { margin-left: 1.4rem; margin-bottom: 0.85rem; }
     li { margin-bottom: 0.25rem; }
 
+    /* EXAMPLE BLOCKS */
+    .example {
+      background: var(--ex-bg);
+      border: 1px solid var(--ex-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    .example-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--primary2);
+      margin-bottom: 0.5rem;
+    }
+    .example p { margin-bottom: 0.5rem; }
+    .example p:last-child { margin-bottom: 0; }
+    .example ul, .example ol { margin-bottom: 0.5rem; }
+
     /* MATH BLOCKS */
     .mb {
       overflow-x: auto;
@@ -93,6 +115,10 @@
       background: var(--code-bg);
       border-left: 3px solid var(--pl);
       border-radius: 0 6px 6px 0;
+    }
+    .example .mb {
+      background: #ede9fe;
+      border-left-color: var(--primary2);
     }
 
     /* CALLOUT */
@@ -117,7 +143,7 @@
       font-size: 0.88rem;
       font-family: 'Courier New', monospace;
       line-height: 1.8;
-      margin: 1rem 0;
+      margin: 0.75rem 0;
       overflow-x: auto;
     }
     .calc-box .comment { color: #818cf8; }
@@ -131,9 +157,10 @@
     td { padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--border); }
     tbody tr:nth-child(even) { background: #f8fafc; }
     td:not(:first-child), th:not(:first-child) { text-align: center; }
-    .hi { background: #fef3c7 !important; font-weight: 700; }
+    .hi       { background: #fef3c7 !important; font-weight: 700; }
     .hi-green { background: #d1fae5 !important; font-weight: 700; }
     .hi-red   { background: #fee2e2 !important; font-weight: 700; }
+    .example table tbody tr:nth-child(even) { background: #ede9fe; }
 
     /* STEP CARDS */
     .steps { display: flex; flex-direction: column; gap: 0.8rem; margin: 1rem 0; }
@@ -166,28 +193,19 @@
       margin: 1rem 0;
     }
     .prog-label { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
-    .prog-bar-outer {
-      height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;
-    }
+    .prog-bar-outer { height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
     .prog-bar-inner {
-      height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary2));
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary2));
       border-radius: 5px;
     }
     .prog-val { font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem; text-align: right; }
 
     /* EXAMPLE SESSION */
-    .session-step {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      overflow: hidden;
-    }
+    .session-step { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1rem; overflow: hidden; }
     .session-header {
-      background: var(--primary);
-      color: white;
-      padding: 0.55rem 1rem;
-      font-size: 0.88rem;
-      font-weight: 600;
+      background: var(--primary); color: white;
+      padding: 0.55rem 1rem; font-size: 0.88rem; font-weight: 600;
     }
     .session-body { padding: 0.9rem 1.1rem; font-size: 0.9rem; }
     .session-body p { margin-bottom: 0.5rem; }
@@ -203,9 +221,7 @@
 
     /* FOOTER */
     .site-footer {
-      text-align: center;
-      font-size: 0.82rem;
-      color: var(--muted);
+      text-align: center; font-size: 0.82rem; color: var(--muted);
       padding: 1.5rem 1rem 2rem;
     }
     .site-footer a { color: var(--pl); text-decoration: none; }
@@ -222,7 +238,7 @@
 
 <div class="header">
   <h1>Explicación matemática detallada</h1>
-  <p>Cómo funciona el motor bayesiano del test adaptativo, paso a paso y con números concretos</p>
+  <p>Fundamentos del motor bayesiano adaptativo, con formulación general y ejemplos numéricos de la demo</p>
 </div>
 
 <div class="container">
@@ -242,6 +258,9 @@
       <li><a href="#s10">Sesión de ejemplo completa</a></li>
       <li><a href="#s11">Convergencia: por qué el sistema aprende</a></li>
     </ol>
+    <p style="margin-top:0.9rem; font-size:0.85rem; color:var(--muted);">
+      Los bloques en <span style="background:var(--ex-bg);border:1px solid var(--ex-border);border-radius:4px;padding:0 0.4em;font-size:0.85em;color:var(--primary2);font-weight:600;">EJEMPLO · DEMO</span> muestran el caso concreto de la demo (3 niveles, 4 opciones). El resto de cada sección es formulación general.
+    </p>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
@@ -258,39 +277,49 @@
       <li>Un criterio para decidir cuándo ya sabe suficiente y puede parar.</li>
     </ol>
 
-    <p>Este sistema resuelve los cuatro puntos usando el <strong>teorema de Bayes</strong> para actualizar, la <strong>función logística IRT 3PL</strong> para calcular las verosimilitudes, y la <strong>entropía de Shannon</strong> para medir la incertidumbre y seleccionar preguntas.</p>
+    <p>Este sistema resuelve los cuatro puntos usando el <strong>teorema de Bayes</strong> para actualizar, la <strong>función logística IRT 3PL</strong> para calcular las verosimilitudes, y la <strong>entropía de Shannon</strong> para medir la incertidumbre y seleccionar preguntas. El diseño es independiente del número de hipótesis, del número de dificultades y del formato de las preguntas.</p>
   </section>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
   <section id="s2">
     <h2>2. El espacio de hipótesis y el prior inicial</h2>
 
-    <p>El sistema no trabaja con una única estimación puntual del nivel del alumno, sino con una <strong>distribución de probabilidades</strong> sobre tres hipótesis:</p>
+    <p>El sistema no trabaja con una estimación puntual del nivel del alumno, sino con una <strong>distribución de probabilidades</strong> sobre \(n\) hipótesis \(H_0, H_1, \ldots, H_{n-1}\). Las hipótesis pueden ser niveles jerárquicos, errores conceptuales, necesidades de refuerzo u otras categorías pedagógicas pertinentes.</p>
 
-    <table>
-      <thead><tr><th>Hipótesis</th><th>Valor numérico \(\theta_i\)</th><th>Significado</th></tr></thead>
-      <tbody>
-        <tr><td>\(H_0\) — Básico</td><td>\(\theta_0 = -1\)</td><td>Conocimiento básico o escaso</td></tr>
-        <tr><td>\(H_1\) — Medio</td><td>\(\theta_1 = 0\)</td><td>Conocimiento medio o consolidado</td></tr>
-        <tr><td>\(H_2\) — Avanzado</td><td>\(\theta_2 = +1\)</td><td>Conocimiento avanzado o sólido</td></tr>
-      </tbody>
-    </table>
+    <p>A cada hipótesis se le asigna un valor numérico \(\theta_i\) que la posiciona en la escala que comparte con la dificultad de las preguntas. La convención recomendada es centrar los valores en cero con intervalos iguales:</p>
 
-    <p>Los valores \(\theta_i\) están centrados en cero con separación unitaria. La misma escala se usa para la dificultad de las preguntas, lo que hace que la función logística produzca probabilidades coherentes entre niveles y dificultades.</p>
+    <div class="mb">\[
+      \theta_i = -\frac{n-1}{2} + i \qquad i = 0, 1, \ldots, n-1
+    \]</div>
+
+    <p>Esto produce valores simétricos respecto al cero: para \(n=2\), \((-0{,}5,\; +0{,}5)\); para \(n=3\), \((-1,\; 0,\; +1)\); para \(n=4\), \((-1{,}5,\; -0{,}5,\; +0{,}5,\; +1{,}5)\), etc. La misma convención se aplica a la dificultad \(b_q\) de las preguntas, garantizando que ambas escalas sean comparables.</p>
 
     <h3>Prior inicial: ignorancia total</h3>
 
-    <p>Al comenzar el test, el sistema no sabe nada del alumno. Aplica el principio de indiferencia: si no hay razón para preferir una hipótesis sobre otra, se asignan probabilidades iguales.</p>
+    <p>Al comenzar el test, el sistema no tiene información sobre el alumno. Aplica el principio de indiferencia: asigna probabilidades iguales a todas las hipótesis.</p>
 
     <div class="mb">\[
-      \pi^{(0)} = \bigl(P(H_0),\, P(H_1),\, P(H_2)\bigr) = \left(\tfrac{1}{3},\, \tfrac{1}{3},\, \tfrac{1}{3}\right) \approx (33{,}3\%,\; 33{,}3\%,\; 33{,}3\%)
+      \pi^{(0)}_i = \frac{1}{n} \qquad \forall\, i
     \]</div>
 
-    <p>Este vector \(\pi^{(0)}\) es el <em>prior</em>. Tras cada respuesta se convierte en el <em>posterior</em>, que pasa a ser el prior de la siguiente pregunta. Así, la estimación se refina de forma acumulativa.</p>
+    <p>Este vector \(\pi^{(0)}\) es el <em>prior</em>. Tras cada respuesta se convierte en el <em>posterior</em>, que pasa a ser el prior de la siguiente pregunta. La estimación se refina de forma acumulativa.</p>
 
     <div class="callout callout-blue">
       <strong>Intuición</strong>
-      La distribución no es una etiqueta sino un estado de conocimiento. Si \(P(H_1) = 0{,}70\), el sistema no afirma que el alumno es de nivel medio: afirma que, con los datos disponibles, el nivel medio es 3,5 veces más probable que cada uno de los otros dos.
+      La distribución no es una etiqueta sino un estado de conocimiento. \(P(H_i) = 0{,}70\) no afirma que el alumno tiene el nivel \(i\): afirma que, con los datos disponibles, esa hipótesis es 2,3 veces más probable que otra con \(P(H_j) = 0{,}30\).
+    </div>
+
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo (n = 3 niveles, 4 opciones por pregunta)</div>
+      <table>
+        <thead><tr><th>Hipótesis</th><th>Valor \(\theta_i\)</th><th>Significado</th></tr></thead>
+        <tbody>
+          <tr><td>\(H_0\) — Básico</td><td>\(-1\)</td><td>Conocimiento básico o escaso</td></tr>
+          <tr><td>\(H_1\) — Medio</td><td>\(0\)</td><td>Conocimiento medio o consolidado</td></tr>
+          <tr><td>\(H_2\) — Avanzado</td><td>\(+1\)</td><td>Conocimiento avanzado o sólido</td></tr>
+        </tbody>
+      </table>
+      <p>Prior inicial: \(\pi^{(0)} = (1/3,\; 1/3,\; 1/3) \approx 33{,}3\%\) para cada nivel.</p>
     </div>
   </section>
 
@@ -298,116 +327,81 @@
   <section id="s3">
     <h2>3. El modelo IRT 3PL: cómo se calculan las verosimilitudes</h2>
 
-    <p>Para actualizar con Bayes, el sistema necesita saber: <em>«si el alumno fuera de nivel \(H_i\), ¿con qué probabilidad acertaría esta pregunta?»</em> Esa probabilidad es la <strong>verosimilitud</strong>.</p>
+    <p>Para actualizar con Bayes, el sistema necesita saber: <em>«si el alumno fuera de nivel \(H_i\), ¿con qué probabilidad acertaría esta pregunta \(q\)?»</em> Esa probabilidad es la <strong>verosimilitud</strong>.</p>
 
-    <p>En lugar de fijar una tabla estática, el sistema calcula las verosimilitudes de forma dinámica para cada pregunta usando el modelo logístico IRT de tres parámetros (<strong>3PL</strong>):</p>
+    <p>En lugar de fijar una tabla estática, las verosimilitudes se calculan de forma dinámica para cada pregunta usando el modelo logístico IRT de tres parámetros (<strong>3PL</strong>):</p>
 
     <div class="mb">\[
       P(\text{acierto} \mid H_i,\, q) \;=\; c_q + (1 - c_q)\cdot\frac{1}{1 + e^{-a\,(\theta_i - b_q)}}
     \]</div>
 
-    <p>Los tres parámetros que dan nombre al modelo son:</p>
+    <p>Los tres parámetros son:</p>
     <ul>
-      <li><strong>\(b_q\)</strong> — dificultad de la pregunta: Fácil \(= -1\), Media \(= 0\), Difícil \(= +1\).</li>
-      <li><strong>\(a = 1{,}5\)</strong> — discriminación: controla lo rápido que cambia la probabilidad alrededor de \(\theta = b_q\).</li>
-      <li><strong>\(c_q = 1/m_q\)</strong> — acierto mínimo por azar: para 4 opciones, \(c_q = 0{,}25\).</li>
+      <li><strong>\(b_q\)</strong> — dificultad de la pregunta, en la misma escala numérica que los \(\theta_i\).</li>
+      <li><strong>\(a\)</strong> — discriminación: controla lo rápido que cambia la probabilidad alrededor de \(\theta_i = b_q\). Valores habituales: 0,5–2,5; un buen punto de partida es \(a = 1{,}5\).</li>
+      <li><strong>\(c_q = 1/m_q\)</strong> — probabilidad mínima de acierto por azar, siendo \(m_q\) el número de opciones. Pertenece a cada pregunta individualmente: distintas preguntas en un mismo test pueden tener distintos \(m_q\).</li>
     </ul>
 
     <h3>La función logística y el parámetro de azar</h3>
 
-    <p>La fracción \(\dfrac{1}{1+e^{-a(\theta_i-b_q)}}\) es la <em>función logística estándar</em>. Tiene forma de S:</p>
+    <p>La fracción \(\sigma(x) = 1/(1+e^{-x})\) es la función logística estándar. Con \(x = a(\theta_i - b_q)\):</p>
     <ul>
-      <li>Si \(\theta_i \gg b_q\) (alumno muy por encima de la dificultad): el exponente \(e^{-a(\theta_i-b_q)} \to 0\), la fracción tiende a 1.</li>
-      <li>Si \(\theta_i = b_q\) (alumno justo en la dificultad): la fracción vale exactamente \(0{,}5\).</li>
-      <li>Si \(\theta_i \ll b_q\) (alumno muy por debajo): la fracción tiende a 0.</li>
+      <li>\(\theta_i \gg b_q\): \(\sigma \to 1\), la probabilidad de acierto tiende a 1.</li>
+      <li>\(\theta_i = b_q\): \(\sigma = 0{,}5\), punto de inflexión de la curva.</li>
+      <li>\(\theta_i \ll b_q\): \(\sigma \to 0\), la probabilidad de acierto tiende a \(c_q\).</li>
     </ul>
 
-    <p>El término \(c_q + (1-c_q)\cdot(\cdots)\) levanta el suelo de la curva hasta \(c_q\): ningún alumno puede tener una probabilidad de acierto menor que la de responder al azar. Cuando \(\theta_i = b_q\) exactamente, la probabilidad de acierto es:</p>
+    <p>El término \(c_q + (1-c_q)\cdot\sigma\) desplaza el suelo de la curva hasta \(c_q\): ningún alumno puede tener una probabilidad de acierto menor que la de responder al azar. Cuando \(\theta_i = b_q\) exactamente, la probabilidad de acierto es siempre:</p>
 
     <div class="mb">\[
-      P(\text{acierto}) = c_q + (1-c_q)\cdot 0{,}5 = 0{,}25 + 0{,}75 \times 0{,}5 = 0{,}625
+      P(\text{acierto} \mid \theta_i = b_q) = c_q + (1-c_q)\cdot 0{,}5 = \frac{1 + c_q}{2}
     \]</div>
 
-    <p>Eso explica las entradas de la diagonal de la tabla siguiente (62,5 %).</p>
-
-    <h3>Tabla completa de verosimilitudes de acierto (\(a = 1{,}5\), \(m_q = 4\), \(c_q = 0{,}25\))</h3>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Pregunta</th>
-          <th>Básico \(\theta = -1\)</th>
-          <th>Medio \(\theta = 0\)</th>
-          <th>Avanzado \(\theta = +1\)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Fácil \(b=-1\)</td>
-          <td class="hi">62,5 %</td>
-          <td>86,3 %</td>
-          <td>96,4 %</td>
-        </tr>
-        <tr>
-          <td>Media \(b=0\)</td>
-          <td>38,7 %</td>
-          <td class="hi">62,5 %</td>
-          <td>86,3 %</td>
-        </tr>
-        <tr>
-          <td>Difícil \(b=1\)</td>
-          <td>28,6 %</td>
-          <td>38,7 %</td>
-          <td class="hi">62,5 %</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p>Las celdas resaltadas son los puntos donde \(\theta_i = b_q\): siempre dan 62,5 %. La tabla muestra que la curva es simétrica respecto a esa diagonal.</p>
-
-    <h3>Cálculo explícito: pregunta media, nivel medio</h3>
-
-    <div class="calc-box">
-<span class="comment">-- Parámetros: θ = 0 (Medio), b = 0 (Media), a = 1.5, c = 0.25</span>
-<span class="label">Exponente:</span>  −a·(θ − b) = −1.5·(0 − 0) = 0
-<span class="label">Logística:</span>  1 / (1 + e⁰) = 1 / (1 + 1) = 0.5
-<span class="label">P(acierto):</span> 0.25 + (1 − 0.25)·0.5 = 0.25 + 0.375 = <span class="result">0.625</span>
-
-<span class="comment">-- Pregunta media, nivel básico</span>
-<span class="label">Exponente:</span>  −1.5·(−1 − 0) = +1.5
-<span class="label">e^1.5 ≈ 4.4817</span>
-<span class="label">Logística:</span>  1 / (1 + 4.4817) = 1 / 5.4817 ≈ 0.1824
-<span class="label">P(acierto):</span> 0.25 + 0.75·0.1824 = 0.25 + 0.1368 = <span class="result">0.3868 ≈ 38.7 %</span>
-
-<span class="comment">-- Pregunta media, nivel avanzado</span>
-<span class="label">Exponente:</span>  −1.5·(+1 − 0) = −1.5
-<span class="label">e^−1.5 ≈ 0.2231</span>
-<span class="label">Logística:</span>  1 / (1 + 0.2231) ≈ 0.8176
-<span class="label">P(acierto):</span> 0.25 + 0.75·0.8176 = 0.25 + 0.6132 = <span class="result">0.8632 ≈ 86.3 %</span>
-    </div>
+    <p>Por tanto, el punto de inflexión de la curva depende del valor de \(c_q\): con \(c_q = 0{,}25\) es \(0{,}625\); con \(c_q = 0{,}5\) (pregunta verdadero/falso) es \(0{,}75\); con \(c_q = 0\) es exactamente \(0{,}5\).</p>
 
     <h3>Verosimilitud de fallo</h3>
 
-    <p>Si el alumno <em>falla</em>, la verosimilitud es simplemente el complemento:</p>
+    <p>Si el alumno <em>falla</em>, la verosimilitud es el complemento:</p>
 
     <div class="mb">\[
       P(\text{fallo} \mid H_i,\, q) = 1 - P(\text{acierto} \mid H_i,\, q)
     \]</div>
 
-    <p>Para una pregunta media, las verosimilitudes de fallo son:</p>
-
-    <table>
-      <thead><tr><th>Nivel</th><th>P(acierto)</th><th>P(fallo)</th></tr></thead>
-      <tbody>
-        <tr><td>Básico</td><td>38,7 %</td><td class="hi-red">61,3 %</td></tr>
-        <tr><td>Medio</td><td>62,5 %</td><td>37,5 %</td></tr>
-        <tr><td>Avanzado</td><td>86,3 %</td><td class="hi-green">13,7 %</td></tr>
-      </tbody>
-    </table>
-
     <div class="callout callout-amber">
-      <strong>Asimetría diagnóstica</strong>
-      Un fallo en una pregunta media es muy informativo: un alumno básico la falla con 61,3 % de probabilidad, un avanzado solo con 13,7 %. La ratio es 4,5:1. En cambio, un acierto en esa misma pregunta es menos conclusivo: podría deberse a suerte (el alumno básico la acierta con 38,7 %). Los <strong>fallos son más diagnósticos que los aciertos</strong> en preguntas de opción múltiple porque el suelo de azar crea una asimetría.
+      <strong>Asimetría diagnóstica general</strong>
+      El suelo \(c_q\) hace que los fallos sean siempre más diagnósticos que los aciertos. Un fallo elimina la componente aleatoria: solo puede deberse a ignorancia genuina. Un acierto puede deberse a suerte con probabilidad \(c_q\). Cuanto mayor es \(c_q\) (menos opciones), más débil es la evidencia de cada acierto y más fuerte la de cada fallo.
+    </div>
+
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo (a = 1,5 · m_q = 4 · c_q = 0,25 · 3 niveles · 3 dificultades)</div>
+      <p>El punto de inflexión diagonal es \((1+0{,}25)/2 = 0{,}625\).</p>
+      <p><strong>Tabla de verosimilitudes de acierto:</strong></p>
+      <table>
+        <thead>
+          <tr><th>Dificultad</th><th>Básico \(\theta=-1\)</th><th>Medio \(\theta=0\)</th><th>Avanzado \(\theta=+1\)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Fácil \(b=-1\)</td><td class="hi">62,5 %</td><td>86,3 %</td><td>96,4 %</td></tr>
+          <tr><td>Media \(b=0\)</td><td>38,7 %</td><td class="hi">62,5 %</td><td>86,3 %</td></tr>
+          <tr><td>Difícil \(b=+1\)</td><td>28,6 %</td><td>38,7 %</td><td class="hi">62,5 %</td></tr>
+        </tbody>
+      </table>
+      <p>Las celdas resaltadas son los puntos \(\theta_i = b_q\): siempre dan 62,5 % con estos parámetros.</p>
+      <p><strong>Cálculos explícitos para pregunta media:</strong></p>
+      <div class="calc-box">
+<span class="comment">-- θ = 0 (Medio), b = 0 (Media), a = 1.5, c = 0.25</span>
+<span class="label">Exponente:</span>  −1.5·(0 − 0) = 0 → σ = 1/(1+e⁰) = 0.5
+<span class="label">P(acierto):</span> 0.25 + 0.75·0.5 = <span class="result">0.625</span>
+
+<span class="comment">-- θ = −1 (Básico), b = 0 (Media)</span>
+<span class="label">Exponente:</span>  −1.5·(−1 − 0) = +1.5 → e^1.5 ≈ 4.4817 → σ ≈ 0.1824
+<span class="label">P(acierto):</span> 0.25 + 0.75·0.1824 = <span class="result">0.387</span>
+
+<span class="comment">-- θ = +1 (Avanzado), b = 0 (Media)</span>
+<span class="label">Exponente:</span>  −1.5·(+1 − 0) = −1.5 → e^−1.5 ≈ 0.2231 → σ ≈ 0.8176
+<span class="label">P(acierto):</span> 0.25 + 0.75·0.8176 = <span class="result">0.863</span>
+      </div>
+      <p>Verosimilitudes de <strong>fallo</strong> en pregunta media: Básico 61,3 % · Medio 37,5 % · Avanzado 13,7 %. La ratio básico/avanzado es 4,5:1: el fallo es muy diagnóstico.</p>
     </div>
   </section>
 
@@ -415,116 +409,117 @@
   <section id="s4">
     <h2>4. La actualización bayesiana paso a paso</h2>
 
-    <p>El teorema de Bayes toma el prior actual \(\pi^{(n)}\), la verosimilitud de la respuesta observada, y produce un nuevo posterior \(\pi^{(n+1)}\):</p>
+    <p>El teorema de Bayes toma el prior actual \(\pi^{(t)}\), la verosimilitud de la respuesta observada \(R\), y produce el posterior \(\pi^{(t+1)}\):</p>
 
     <div class="mb">\[
-      \pi^{(n+1)}_i = P(H_i \mid R) = \frac{P(R \mid H_i)\cdot \pi^{(n)}_i}{\displaystyle\sum_j P(R \mid H_j)\cdot \pi^{(n)}_j}
+      \pi^{(t+1)}_i = P(H_i \mid R) = \frac{P(R \mid H_i)\cdot \pi^{(t)}_i}{\displaystyle\sum_{j=0}^{n-1} P(R \mid H_j)\cdot \pi^{(t)}_j}
     \]</div>
 
-    <p>El denominador es simplemente la suma de todos los numeradores: garantiza que el posterior sume 1 (normalización).</p>
+    <p>El denominador normaliza el resultado: garantiza que \(\sum_i \pi^{(t+1)}_i = 1\). Coincide con la probabilidad total de la respuesta \(P(R) = \sum_j P(R\mid H_j)\,\pi^{(t)}_j\).</p>
 
-    <h3>Ejemplo: primera pregunta, pregunta media, respuesta incorrecta</h3>
+    <p>El proceso se repite tras cada respuesta. El posterior de cada turno se convierte en el prior del siguiente, acumulando evidencia de forma continua.</p>
 
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-body">
-          <strong>Prior inicial:</strong> \(\pi = (1/3,\; 1/3,\; 1/3)\). El alumno falla una pregunta media (\(b_q = 0\), \(m_q = 4\)).
+    <p>En la práctica, la operación vectorial es:</p>
+    <ol>
+      <li>Calcular los numeradores: \(u_i = P(R \mid H_i)\cdot \pi^{(t)}_i\) para cada \(i\).</li>
+      <li>Sumar: \(Z = \sum_i u_i\).</li>
+      <li>Normalizar: \(\pi^{(t+1)}_i = u_i / Z\).</li>
+    </ol>
+
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo — Primera pregunta (media), respuesta incorrecta</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Prior:</strong> \(\pi = (1/3,\; 1/3,\; 1/3)\). Pregunta media (\(b_q = 0\), \(m_q = 4\), \(a = 1{,}5\)).
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Verosimilitudes de fallo:</strong>
+            \[P(\text{fallo} \mid H_0) = 0{,}613 \qquad P(\text{fallo} \mid H_1) = 0{,}375 \qquad P(\text{fallo} \mid H_2) = 0{,}137\]
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Numeradores:</strong>
+            \[u_0 = 0{,}613 \times \tfrac{1}{3} = 0{,}2043 \qquad u_1 = 0{,}375 \times \tfrac{1}{3} = 0{,}1250 \qquad u_2 = 0{,}137 \times \tfrac{1}{3} = 0{,}0457\]
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Normalización:</strong> \(Z = 0{,}2043 + 0{,}1250 + 0{,}0457 = 0{,}3750\)
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Posterior:</strong>
+            \[\pi^{(1)} = \left(\frac{0{,}2043}{0{,}375},\;\frac{0{,}1250}{0{,}375},\;\frac{0{,}0457}{0{,}375}\right) \approx (54{,}5\%,\; 33{,}3\%,\; 12{,}2\%)\]
+          </div>
         </div>
       </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-body">
-          <strong>Verosimilitudes de fallo</strong> (complementos de la tabla anterior):
-          \[P(\text{fallo} \mid H_0) = 0{,}613 \qquad P(\text{fallo} \mid H_1) = 0{,}375 \qquad P(\text{fallo} \mid H_2) = 0{,}137\]
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-body">
-          <strong>Productos verosimilitud × prior</strong> (numeradores sin normalizar):
-          \[\text{Básico: } 0{,}613 \times \tfrac{1}{3} = 0{,}2043 \qquad \text{Medio: } 0{,}375 \times \tfrac{1}{3} = 0{,}1250 \qquad \text{Avanzado: } 0{,}137 \times \tfrac{1}{3} = 0{,}0457\]
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-body">
-          <strong>Denominador</strong> (normalización): \(\; 0{,}2043 + 0{,}1250 + 0{,}0457 = 0{,}3750\)
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">5</div>
-        <div class="step-body">
-          <strong>Posterior:</strong>
-          \[P(H_0 \mid \text{fallo}) = \frac{0{,}2043}{0{,}3750} \approx \mathbf{54{,}5\%} \qquad P(H_1 \mid \text{fallo}) = \frac{0{,}1250}{0{,}3750} \approx \mathbf{33{,}3\%} \qquad P(H_2 \mid \text{fallo}) = \frac{0{,}0457}{0{,}3750} \approx \mathbf{12{,}2\%}\]
-        </div>
+      <div class="callout callout-green" style="margin-top:0.5rem">
+        <strong>Resultado</strong>
+        Con una sola respuesta, el sistema pasa de la distribución plana (33 %, 33 %, 33 %) a otra con hipótesis dominante (54,5 %, 33,3 %, 12,2 %). Básico es ahora 4,5 veces más probable que Avanzado.
       </div>
     </div>
-
-    <div class="callout callout-green">
-      <strong>Resultado</strong>
-      Con una sola respuesta, el sistema pasa de una distribución completamente plana (33 %, 33 %, 33 %) a otra con una hipótesis claramente dominante (54,5 %, 33,3 %, 12,2 %). El nivel Básico es ahora 4,5 veces más probable que el Avanzado.
-    </div>
-
-    <p>Este posterior \(\pi^{(1)} = (0{,}545,\; 0{,}333,\; 0{,}122)\) pasa a ser el <em>prior</em> de la siguiente pregunta. El proceso se repite tras cada respuesta, acumulando evidencia.</p>
-
-    <h3>¿Por qué no se usa la fórmula de Bayes original con denominador explícito?</h3>
-
-    <p>La fórmula clásica \(P(H\mid E) = P(E\mid H)\,P(H)/P(E)\) requiere calcular \(P(E)\) como la probabilidad total de la evidencia. Con múltiples hipótesis, esa cantidad es exactamente la suma del denominador, es decir:</p>
-
-    <div class="mb">\[
-      P(E) = \sum_j P(E \mid H_j)\,P(H_j)
-    \]</div>
-
-    <p>El denominador de normalización <em>es</em> \(P(E)\). Calcularlo explícitamente como suma es equivalente y más directo cuando se trabaja con vectores.</p>
   </section>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
   <section id="s5">
     <h2>5. La entropía de Shannon como termómetro de incertidumbre</h2>
 
-    <p>Después de cada actualización, el sistema necesita saber <em>cuánta incertidumbre queda</em>. Para eso usa la entropía de Shannon:</p>
+    <p>Después de cada actualización, el sistema necesita cuantificar cuánta incertidumbre queda. Para eso usa la entropía de Shannon:</p>
 
     <div class="mb">\[
-      H(\pi) = -\sum_{i} \pi_i \log_2 \pi_i \qquad \text{(con la convención } 0\cdot\log_2 0 = 0\text{)}
+      H(\pi) = -\sum_{i=0}^{n-1} \pi_i \log_2 \pi_i \qquad \text{(con la convención } 0\cdot\log_2 0 = 0\text{)}
     \]</div>
 
-    <p>La entropía se mide en <strong>bits</strong> (al usar logaritmo en base 2). Tiene propiedades clave:</p>
+    <p>La entropía se mide en <strong>bits</strong>. Sus propiedades fundamentales son:</p>
     <ul>
-      <li><strong>Máxima</strong> cuando todas las hipótesis son equiprobables: no se sabe nada.</li>
+      <li><strong>Máxima</strong> con distribución uniforme: \(H_0 = \log_2 n\). Aumenta con el número de hipótesis.</li>
       <li><strong>Cero</strong> cuando una hipótesis tiene probabilidad 1: certeza absoluta.</li>
       <li><strong>Estrictamente decreciente</strong> con la concentración de la distribución.</li>
     </ul>
 
-    <h3>Valores concretos del sistema</h3>
+    <p>La fórmula \(-p\log_2 p\) mide la «sorpresa» esperada de cada hipótesis: si \(p = 1\) no hay sorpresa; si \(p = 0{,}5\), la sorpresa es 1 bit (equivalente a una moneda). La entropía total es la media ponderada de las sorpresas individuales.</p>
+
+    <p>La entropía inicial máxima depende únicamente del número de hipótesis:</p>
 
     <table>
-      <thead><tr><th>Distribución</th><th>Entropía</th><th>Interpretación</th></tr></thead>
+      <thead><tr><th>Hipótesis \(n\)</th><th>\(H_0 = \log_2 n\) (bits)</th></tr></thead>
       <tbody>
-        <tr><td>\((1/3,\; 1/3,\; 1/3)\)</td><td>\(\log_2 3 \approx 1{,}585\) bits</td><td>Ignorancia total (prior inicial)</td></tr>
-        <tr><td>\((0{,}545,\; 0{,}333,\; 0{,}122)\)</td><td>\(\approx 1{,}375\) bits</td><td>Tras un fallo en pregunta media</td></tr>
-        <tr><td>\((0{,}80,\; 0{,}10,\; 0{,}10)\)</td><td>\(\approx 0{,}922\) bits</td><td>Umbral de parada \(H_\text{stop}\)</td></tr>
-        <tr><td>\((1{,}0,\; 0{,}0,\; 0{,}0)\)</td><td>\(0\) bits</td><td>Certeza absoluta (imposible en la práctica)</td></tr>
+        <tr><td>2</td><td>1,000</td></tr>
+        <tr><td>3</td><td>1,585</td></tr>
+        <tr><td>4</td><td>2,000</td></tr>
+        <tr><td>5</td><td>2,322</td></tr>
       </tbody>
     </table>
 
-    <h3>Cálculo de la entropía tras el primer fallo</h3>
-
-    <div class="calc-box">
-<span class="comment">-- Prior tras fallo en media: π = (0.545, 0.333, 0.122)</span>
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo (n = 3)</div>
+      <table>
+        <thead><tr><th>Distribución \(\pi\)</th><th>Entropía</th><th>Situación</th></tr></thead>
+        <tbody>
+          <tr><td>\((1/3,\; 1/3,\; 1/3)\)</td><td>\(1{,}585\) bits</td><td>Prior inicial — ignorancia total</td></tr>
+          <tr><td>\((0{,}545,\; 0{,}333,\; 0{,}122)\)</td><td>\(1{,}375\) bits</td><td>Tras un fallo en pregunta media</td></tr>
+          <tr><td>\((0{,}80,\; 0{,}10,\; 0{,}10)\)</td><td>\(0{,}922\) bits</td><td>Umbral de parada \(H_\text{stop}\)</td></tr>
+          <tr><td>\((1{,}0,\; 0{,}0,\; 0{,}0)\)</td><td>\(0\) bits</td><td>Certeza absoluta</td></tr>
+        </tbody>
+      </table>
+      <div class="calc-box">
+<span class="comment">-- π = (0.545, 0.333, 0.122) — tras el primer fallo</span>
 <span class="label">Básico:</span>    0.545 × log₂(0.545) = 0.545 × (−0.875) = −0.477
 <span class="label">Medio:</span>     0.333 × log₂(0.333) = 0.333 × (−1.585) = −0.528
 <span class="label">Avanzado:</span>  0.122 × log₂(0.122) = 0.122 × (−3.036) = −0.370
-
 <span class="label">H(π) =</span> −(−0.477 − 0.528 − 0.370) = <span class="result">1.375 bits</span>
-
-<span class="comment">-- Reducción respecto al prior inicial:</span>
-<span class="label">ΔH =</span> 1.585 − 1.375 = <span class="result">0.210 bits reducidos</span> (13 % del recorrido total)
-    </div>
-
-    <div class="callout callout-blue">
-      <strong>Intuición de la fórmula</strong>
-      Cada término \(-p_i \log_2 p_i\) mide la «sorpresa» esperada si la hipótesis \(i\) fuera cierta. Si \(p_i = 1\), no hay sorpresa (\(-1\cdot 0 = 0\)). Si \(p_i = 0{,}5\), la sorpresa es 1 bit (como una moneda). La entropía total es la media ponderada de las sorpresas de todas las hipótesis.
+<span class="label">ΔH =</span> 1.585 − 1.375 = <span class="result">0.210 bits reducidos</span>
+      </div>
     </div>
   </section>
 
@@ -532,9 +527,9 @@
   <section id="s6">
     <h2>6. Selección de la siguiente pregunta: ganancia esperada de información</h2>
 
-    <p>El sistema no elige preguntas al azar ni simplemente sube la dificultad tras un acierto. Simula el futuro: para cada pregunta disponible, calcula cuánta incertidumbre esperaría reducir <em>antes</em> de mostrarla.</p>
+    <p>El sistema simula el futuro: para cada pregunta disponible, calcula cuánta incertidumbre esperaría reducir <em>antes</em> de mostrarla, y elige la que produzca mayor reducción esperada.</p>
 
-    <p>La <strong>ganancia esperada de información</strong> (también llamada información mutua) de la pregunta \(q\) respecto al prior actual \(\pi\) es:</p>
+    <p>La <strong>ganancia esperada de información</strong> de la pregunta \(q\) es:</p>
 
     <div class="mb">\[
       IG(q) = H(\pi) - \Bigl[P(A)\cdot H(\pi_A) + P(F)\cdot H(\pi_F)\Bigr]
@@ -542,150 +537,124 @@
 
     <p>Donde:</p>
     <ul>
-      <li>\(P(A) = \sum_i \pi_i \cdot P(\text{acierto}\mid H_i,q)\) es la probabilidad marginal de que el alumno acierte (ley de la probabilidad total).</li>
+      <li>\(P(A) = \displaystyle\sum_{i} \pi_i \cdot P(\text{acierto}\mid H_i,q)\) — probabilidad marginal de acierto (ley de la probabilidad total).</li>
       <li>\(P(F) = 1 - P(A)\).</li>
-      <li>\(\pi_A\) es el posterior simulado si el alumno aciertara (aún no ha respondido).</li>
-      <li>\(\pi_F\) es el posterior simulado si el alumno fallara.</li>
+      <li>\(\pi_A\) — posterior simulado si el alumno aciertara: \(\pi_{A,i} = \pi_i \cdot P(\text{acierto}\mid H_i,q)\,/\,P(A)\).</li>
+      <li>\(\pi_F\) — posterior simulado si el alumno fallara: \(\pi_{F,i} = \pi_i \cdot P(\text{fallo}\mid H_i,q)\,/\,P(F)\).</li>
     </ul>
 
-    <h3>Cálculo completo con el prior uniforme</h3>
+    <p>Esta fórmula es la <em>información mutua</em> entre la respuesta a \(q\) y la hipótesis verdadera, calculada bajo el prior actual. Es positiva o cero: ninguna pregunta puede aumentar la incertidumbre esperada.</p>
 
-    <p>Comparamos las tres categorías de preguntas partiendo de \(\pi^{(0)} = (1/3, 1/3, 1/3)\).</p>
+    <p>La pregunta más informativa no es siempre la que coincide con el nivel estimado. Puede ser una que ayude a distinguir entre dos hipótesis todavía plausibles, aunque su dificultad sea distinta a la hipótesis máxima actual. El cálculo de IG se repite en cada turno con el prior actualizado.</p>
 
-    <h4>Pregunta fácil (\(b = -1\))</h4>
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo — IG de las tres categorías con prior uniforme</div>
+      <p>Prior: \(\pi^{(0)} = (1/3, 1/3, 1/3)\). Parámetros: \(a=1{,}5\), \(m_q=4\), \(c_q=0{,}25\).</p>
 
-    <div class="calc-box">
-<span class="comment">-- Verosimilitudes de acierto: (0.625, 0.863, 0.964)</span>
-P(A) = (0.625 + 0.863 + 0.964) / 3 = 2.452 / 3 = <span class="result">0.817</span>
-P(F) = 1 − 0.817 = <span class="result">0.183</span>
+      <h4>Pregunta fácil (\(b = -1\))</h4>
+      <div class="calc-box">
+<span class="comment">-- Verosimilitudes de acierto: v = (0.625, 0.863, 0.964)</span>
+P(A) = (0.625 + 0.863 + 0.964)/3 = <span class="result">0.817</span>  ·  P(F) = 0.183
 
-<span class="comment">-- Posterior si acierta:</span>
-π_A = (0.625/2.452, 0.863/2.452, 0.964/2.452) = (0.255, 0.352, 0.393)
-H(π_A) = 1.563 bits
+π_A = (0.625/2.452, 0.863/2.452, 0.964/2.452) = (0.255, 0.352, 0.393)  →  H(π_A) = 1.563 bits
+π_F = (0.375/0.549, 0.137/0.549, 0.036/0.549) = (0.683, 0.250, 0.066)  →  H(π_F) = 1.131 bits
 
-<span class="comment">-- Posterior si falla:</span>
-<span class="comment">   raw_F = (1/3·0.375, 1/3·0.137, 1/3·0.036) = (0.125, 0.046, 0.012)</span>
-π_F = (0.125/0.183, 0.046/0.183, 0.012/0.183) = (0.683, 0.251, 0.066)
-H(π_F) = 1.131 bits
+IG(fácil) = 1.585 − [0.817×1.563 + 0.183×1.131] = <span class="result">0.101 bits</span>
+      </div>
 
-IG(fácil) = 1.585 − [0.817·1.563 + 0.183·1.131] = 1.585 − [1.277 + 0.207] = <span class="result">0.101 bits</span>
+      <h4>Pregunta media (\(b = 0\))</h4>
+      <div class="calc-box">
+<span class="comment">-- Verosimilitudes de acierto: v = (0.387, 0.625, 0.863)</span>
+P(A) = (0.387 + 0.625 + 0.863)/3 = <span class="result">0.625</span>  ·  P(F) = 0.375
+
+π_A = (0.387/1.875, 0.625/1.875, 0.863/1.875) = (0.206, 0.333, 0.460)  →  H(π_A) = 1.513 bits
+π_F = (0.613/1.125, 0.375/1.125, 0.137/1.125) = (0.545, 0.333, 0.122)  →  H(π_F) = 1.375 bits
+
+IG(media) = 1.585 − [0.625×1.513 + 0.375×1.375] = <span class="result">0.123 bits</span>
+      </div>
+
+      <h4>Pregunta difícil (\(b = +1\))</h4>
+      <div class="calc-box">
+<span class="comment">-- Verosimilitudes de acierto: v = (0.286, 0.387, 0.625)</span>
+P(A) = (0.286 + 0.387 + 0.625)/3 = <span class="result">0.433</span>  ·  P(F) = 0.567
+
+π_A = (0.286/1.298, 0.387/1.298, 0.625/1.298) = (0.220, 0.298, 0.482)  →  H(π_A) = 1.509 bits
+π_F = (0.714/1.700, 0.613/1.700, 0.375/1.700) = (0.420, 0.361, 0.221)  →  H(π_F) = 1.537 bits
+
+IG(difícil) = 1.585 − [0.433×1.509 + 0.567×1.537] = <span class="result">0.061 bits</span>
+      </div>
+
+      <table>
+        <thead><tr><th>Tipo</th><th>P(A)</th><th>IG (bits)</th><th>Decisión</th></tr></thead>
+        <tbody>
+          <tr><td>Media \(b=0\)</td><td>0,625</td><td class="hi">0,123</td><td>✓ Elegida</td></tr>
+          <tr><td>Fácil \(b=-1\)</td><td>0,817</td><td>0,101</td><td></td></tr>
+          <tr><td>Difícil \(b=+1\)</td><td>0,433</td><td>0,061</td><td></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.88rem;color:var(--muted)">Con prior uniforme y estos parámetros, la pregunta media gana porque tiene \(P(A) = 0{,}625\): produce una bifurcación acierto/fallo casi óptima y unos ratios de verosimilitud que diferencian bien los tres niveles. Si el prior cambia (por ejemplo, tras varios fallos), puede cambiar también qué tipo de pregunta tiene mayor IG.</p>
     </div>
-
-    <h4>Pregunta media (\(b = 0\))</h4>
-
-    <div class="calc-box">
-<span class="comment">-- Verosimilitudes de acierto: (0.387, 0.625, 0.863)</span>
-P(A) = (0.387 + 0.625 + 0.863) / 3 = 1.875 / 3 = <span class="result">0.625</span>
-P(F) = <span class="result">0.375</span>
-
-<span class="comment">-- Posterior si acierta:</span>
-π_A = (0.387/1.875, 0.625/1.875, 0.863/1.875) = (0.206, 0.333, 0.460)
-H(π_A) = 1.513 bits
-
-<span class="comment">-- Posterior si falla (ya calculado en §4):</span>
-π_F = (0.545, 0.333, 0.122)
-H(π_F) = 1.375 bits
-
-IG(media) = 1.585 − [0.625·1.513 + 0.375·1.375] = 1.585 − [0.946 + 0.516] = <span class="result">0.123 bits</span>
-    </div>
-
-    <h4>Pregunta difícil (\(b = +1\))</h4>
-
-    <div class="calc-box">
-<span class="comment">-- Verosimilitudes de acierto: (0.286, 0.387, 0.625)</span>
-P(A) = (0.286 + 0.387 + 0.625) / 3 = 1.298 / 3 = <span class="result">0.433</span>
-P(F) = <span class="result">0.567</span>
-
-<span class="comment">-- Posterior si acierta:</span>
-π_A = (0.286/1.298, 0.387/1.298, 0.625/1.298) = (0.220, 0.298, 0.482)
-H(π_A) = 1.509 bits
-
-<span class="comment">-- Posterior si falla:</span>
-<span class="comment">   raw_F = (1/3·0.714, 1/3·0.613, 1/3·0.375) = (0.238, 0.204, 0.125)</span>
-π_F = (0.420, 0.360, 0.220)
-H(π_F) = 1.537 bits
-
-IG(difícil) = 1.585 − [0.433·1.509 + 0.567·1.537] = 1.585 − [0.653 + 0.871] = <span class="result">0.061 bits</span>
-    </div>
-
-    <h3>Comparación</h3>
-
-    <table>
-      <thead><tr><th>Tipo de pregunta</th><th>IG (bits)</th><th>Decisión</th></tr></thead>
-      <tbody>
-        <tr><td>Media \(b=0\)</td><td class="hi">0,123</td><td>✓ Elegida</td></tr>
-        <tr><td>Fácil \(b=-1\)</td><td>0,101</td><td></td></tr>
-        <tr><td>Difícil \(b=+1\)</td><td>0,061</td><td></td></tr>
-      </tbody>
-    </table>
-
-    <div class="callout callout-blue">
-      <strong>¿Por qué gana la pregunta media con prior uniforme?</strong>
-      Con \(P(A) = 0{,}625\) y \(P(F) = 0{,}375\), una pregunta media produce un reparto casi óptimo de probabilidad entre acierto y fallo, con buenos ratios de verosimilitud entre niveles. La pregunta fácil tiene \(P(A) = 0{,}817\): casi siempre se acierta, y un acierto en una pregunta fácil apenas mueve la distribución. La difícil tiene \(P(A) = 0{,}433\): genera posteriors más concentrados pero con menor ganancia neta porque los valores de verosimilitud están más aplastados por el suelo de azar.
-    </div>
-
-    <p>A medida que el prior cambia, también cambia qué pregunta es más informativa. Si tras varios fallos el sistema estima que el alumno es básico con alta probabilidad, una pregunta fácil puede ser más útil para distinguir entre «básico» y «muy básico». El cálculo de IG se repite en cada turno con el prior actualizado.</p>
   </section>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
   <section id="s7">
     <h2>7. Criterio de parada dual</h2>
 
-    <p>El test no termina después de un número fijo de preguntas. Se detiene cuando se cumplen <strong>simultáneamente</strong> dos condiciones (tras un mínimo de 6 preguntas):</p>
+    <p>El test se detiene cuando se cumplen <strong>simultáneamente</strong> dos condiciones, tras un número mínimo de preguntas \(MIN\_Q\):</p>
 
     <div class="mb">\[
-      \text{(1)}\;\; H(\pi) < H_\text{stop} \qquad\text{y}\qquad \text{(2)}\;\; \max_i \pi_i \geq 0{,}80
+      \text{(1)}\;\; H(\pi) < H_\text{stop}(n,\, p_\min) \qquad\text{y}\qquad \text{(2)}\;\; \max_i \pi_i \geq p_\min
     \]</div>
 
-    <h3>¿Por qué dos criterios?</h3>
-
-    <p>\(H_\text{stop}\) se calcula asumiendo que la probabilidad residual \((1-p_\min)\) se reparte uniformemente entre las otras hipótesis. Eso es una aproximación. Con tres hipótesis, la distribución \((0{,}80,\; 0{,}10,\; 0{,}10)\) tiene la misma hipótesis máxima que \((0{,}80,\; 0{,}19,\; 0{,}01)\), pero entropías distintas:</p>
-
-    <div class="calc-box">
-H(0.80, 0.10, 0.10) = <span class="result">0.922 bits</span>  ← umbral H_stop
-H(0.80, 0.19, 0.01) ≈ 0.834 bits     ← diferente entropía, misma hipótesis máxima
-    </div>
-
-    <p>Por eso se comprueba también la condición \(\max_i \pi_i \geq 0{,}80\): garantiza que la hipótesis más probable realmente supera el umbral de confianza, independientemente de cómo se distribuya el resto.</p>
+    <p>El parámetro \(p_\min\) es el nivel de confianza deseado (típicamente \(0{,}80\)).</p>
 
     <h3>Derivación de \(H_\text{stop}\)</h3>
 
-    <p>El umbral se define como la entropía de la distribución límite: la menos concentrada que aún cumple \(\max_i \pi_i = p_\min = 0{,}80\). Bajo el supuesto de reparto uniforme del resto:</p>
+    <p>El umbral \(H_\text{stop}\) es la entropía de la distribución límite: la menos concentrada que aún cumple \(\max_i \pi_i = p_\min\). Bajo el supuesto de que la probabilidad restante \(1 - p_\min\) se distribuye uniformemente entre las otras \(n-1\) hipótesis:</p>
 
     <div class="mb">\[
-      H_\text{stop} = -p_\min \log_2 p_\min - (1-p_\min)\log_2\!\left(\frac{1-p_\min}{n-1}\right)
+      H_\text{stop}(n,\, p_\min) = -p_\min \log_2 p_\min - (1-p_\min)\log_2\!\left(\frac{1-p_\min}{n-1}\right)
     \]</div>
 
-    <p>Para \(n = 3\) hipótesis y \(p_\min = 0{,}80\):</p>
+    <p>Valores para \(p_\min = 0{,}80\):</p>
 
-    <div class="calc-box">
-<span class="label">p_min = 0.80,  (1 − p_min) = 0.20,  (n−1) = 2</span>
-<span class="label">Término 1:</span>  −0.80 × log₂(0.80) = −0.80 × (−0.3219) = <span class="result">+0.2575</span>
-<span class="label">Término 2:</span>  −0.20 × log₂(0.20/2) = −0.20 × log₂(0.10)
-             = −0.20 × (−3.3219) = <span class="result">+0.6644</span>
-H_stop = 0.2575 + 0.6644 = <span class="result">0.922 bits</span>
-    </div>
+    <table>
+      <thead><tr><th>Hipótesis \(n\)</th><th>\(H_0 = \log_2 n\)</th><th>\(H_\text{stop}\)</th><th>Recorrido \(H_0 - H_\text{stop}\)</th></tr></thead>
+      <tbody>
+        <tr><td>2</td><td>1,000 bits</td><td>0,722 bits</td><td>0,278 bits</td></tr>
+        <tr><td>3</td><td>1,585 bits</td><td>0,922 bits</td><td>0,663 bits</td></tr>
+        <tr><td>4</td><td>2,000 bits</td><td>1,061 bits</td><td>0,939 bits</td></tr>
+        <tr><td>5</td><td>2,322 bits</td><td>1,161 bits</td><td>1,161 bits</td></tr>
+      </tbody>
+    </table>
 
-    <h3>Entropía inicial y barra de progreso</h3>
+    <h3>Por qué se necesitan dos criterios</h3>
+
+    <p>\(H_\text{stop}\) se calcula asumiendo reparto uniforme del resto, lo que es una aproximación. Con \(n=3\), las distribuciones \((0{,}80,\; 0{,}10,\; 0{,}10)\) y \((0{,}80,\; 0{,}19,\; 0{,}01)\) tienen la misma hipótesis máxima pero entropías distintas (0,922 y 0,834 bits respectivamente). La condición \(\max_i \pi_i \geq p_\min\) garantiza que la hipótesis dominante supera el umbral de confianza independientemente de cómo se distribuya el resto.</p>
+
+    <h3>Barra de progreso</h3>
+
+    <p>La reducción relativa de entropía hacia el umbral de parada define el progreso:</p>
 
     <div class="mb">\[
-      H_0 = \log_2 3 \approx 1{,}585 \text{ bits} \qquad\longrightarrow\qquad H_\text{stop} \approx 0{,}922 \text{ bits}
+      \text{progreso} = \frac{H_0 - H(\pi)}{H_0 - H_\text{stop}}
+      \quad\in [0,\, 1]
     \]</div>
 
-    <p>El recorrido a cubrir es \(H_0 - H_\text{stop} \approx 0{,}663\) bits. La barra de progreso refleja qué fracción de ese recorrido se ha completado:</p>
-
-    <div class="mb">\[
-      \text{progreso} = \frac{H_0 - H(\pi)}{H_0 - H_\text{stop}} = \frac{1{,}585 - H(\pi)}{0{,}663}
-    \]</div>
-
-    <p>Ejemplo tras el primer fallo (pregunta media):</p>
-
-    <div class="prog-demo">
-      <div class="prog-label">Progreso tras 1 pregunta — H(π) = 1,375 bits</div>
-      <div class="prog-bar-outer">
-        <div class="prog-bar-inner" style="width:32%"></div>
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo (n = 3, p_min = 0,80)</div>
+      <div class="calc-box">
+<span class="label">H_stop:</span>  −0.80×log₂(0.80) − 0.20×log₂(0.10)
+         = 0.2575 + 0.6644 = <span class="result">0.922 bits</span>
+<span class="label">H_0:</span>     log₂(3) = <span class="result">1.585 bits</span>
+<span class="label">Recorrido:</span> 1.585 − 0.922 = <span class="result">0.663 bits</span>
       </div>
-      <div class="prog-val">32 % &nbsp;·&nbsp; (1,585 − 1,375) / 0,663 = 0,210 / 0,663 ≈ 0,32</div>
+      <p>Progreso tras el primer fallo (H = 1,375 bits):</p>
+      <div class="prog-demo">
+        <div class="prog-label">H(π) = 1,375 bits → (1,585 − 1,375) / 0,663 = 0,210 / 0,663</div>
+        <div class="prog-bar-outer"><div class="prog-bar-inner" style="width:32%"></div></div>
+        <div class="prog-val">32 %</div>
+      </div>
     </div>
   </section>
 
@@ -693,27 +662,30 @@ H_stop = 0.2575 + 0.6644 = <span class="result">0.922 bits</span>
   <section id="s8">
     <h2>8. Número máximo de preguntas: búsqueda minimax</h2>
 
-    <p>¿Cuántas preguntas son necesarias en el <em>peor caso posible</em> antes de que la entropía caiga bajo \(H_\text{stop}\)? Ese valor es <strong>\(MAX\_Q\)</strong>.</p>
-
-    <p>Para calcularlo, el sistema construye un árbol de decisión recursivo:</p>
+    <p>\(MAX\_Q\) es el número de preguntas necesarias en el <em>peor caso posible</em> para que la entropía caiga bajo \(H_\text{stop}\) con una política de selección óptima. Se calcula con búsqueda minimax sobre el árbol de respuestas posibles:</p>
 
     <ol>
-      <li>En cada nodo del árbol, el sistema selecciona la pregunta con mayor IG usando el prior actual.</li>
-      <li>Desde ese nodo se bifurcan dos ramas: una para acierto y otra para fallo.</li>
-      <li>En cada rama se calcula el nuevo prior y se repite el proceso.</li>
-      <li>Si el nuevo prior ya cumple \(H < H_\text{stop}\), esa rama termina.</li>
-      <li>El número máximo de preguntas es la profundidad máxima del árbol antes de que todas las ramas hayan terminado.</li>
+      <li>En cada nodo, se selecciona la pregunta con mayor IG bajo el prior actual.</li>
+      <li>Desde ese nodo se bifurcan ramas: una por cada resultado posible (acierto/fallo, o más si hay más de dos resultados autocorregibles).</li>
+      <li>En cada rama se actualiza el prior y se recurre.</li>
+      <li>Una rama termina cuando su prior cumple \(H < H_\text{stop}\).</li>
+      <li>\(MAX\_Q\) es la profundidad máxima del árbol.</li>
     </ol>
 
     <div class="mb">\[
-      MAX\_Q = \min\{k : \text{el árbol completo de profundidad } k \text{ cubre todos los casos}\}
+      MAX\_Q = \min\!\left\{k \;:\; \text{todas las hojas del árbol óptimo tienen profundidad} \leq k\right\}
     \]</div>
 
-    <p>Como el árbol real sería demasiado grande (depende de qué preguntas concretas estén disponibles), el cálculo usa preguntas <em>representativas</em> abstractas: una fácil, una media y una difícil, con \(m_q = 4\). La búsqueda se hace con memoización para evitar recalcular distribuciones ya visitadas.</p>
+    <p>Como el árbol real depende del banco de preguntas concreto, el cálculo suele usar un conjunto de preguntas <em>representativas abstractas</em>: una por cada categoría de dificultad disponible, con sus parámetros nominales. La búsqueda se hace con memoización sobre distribuciones ya visitadas.</p>
 
     <div class="callout callout-amber">
       <strong>Garantía de terminación</strong>
-      \(MAX\_Q\) garantiza que el test siempre termina en como máximo ese número de preguntas, sea cual sea la secuencia de respuestas del alumno. No es un promedio: es el peor caso. En la práctica, la mayoría de sesiones terminan bastante antes.
+      \(MAX\_Q\) garantiza que el test termina en como máximo ese número de preguntas, sea cual sea la secuencia de respuestas. No es un promedio: es el peor caso. La mayoría de sesiones terminan antes. Este valor puede mostrarse al usuario como referencia de transparencia.
+    </div>
+
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo</div>
+      <p>Las preguntas representativas son tres: fácil (\(b=-1\)), media (\(b=0\)) y difícil (\(b=+1\)), todas con \(m_q=4\). La búsqueda minimax parte del prior uniforme y explora recursivamente el peor caso de acierto/fallo en cada nodo, cacheando distribuciones redondeadas a tres decimales para evitar ciclos.</p>
     </div>
   </section>
 
@@ -721,47 +693,48 @@ H_stop = 0.2575 + 0.6644 = <span class="result">0.922 bits</span>
   <section id="s9">
     <h2>9. Aleatorización justa: Fisher-Yates y selección ponderada</h2>
 
-    <h3>Por qué no basta con <code>sort(Math.random())</code></h3>
+    <h3>Por qué no basta con ordenar aleatoriamente</h3>
 
-    <p>El truco popular de barajar un array con <code>array.sort(() => Math.random() - 0.5)</code> produce permutaciones sesgadas. El motor de ordenación de JavaScript (TimSort) no llama al comparador el mismo número de veces para todos los pares, lo que hace que algunos elementos acaben al principio con mayor frecuencia que otros.</p>
+    <p>El truco común de barajar con <code>array.sort(() => Math.random() - 0.5)</code> produce permutaciones sesgadas. Los algoritmos de ordenación no llaman al comparador el mismo número de veces para todos los pares, lo que hace que ciertos elementos aparezcan antes con más frecuencia. El sesgo es sistemático y reproducible.</p>
 
-    <p>El sistema usa el algoritmo de <strong>Fisher-Yates</strong>, que garantiza una distribución uniforme sobre todas las \(n!\) permutaciones posibles:</p>
+    <p>El algoritmo de <strong>Fisher-Yates</strong> garantiza una distribución uniforme sobre todas las \(N!\) permutaciones:</p>
 
     <div class="calc-box">
 <span class="comment">-- Fisher-Yates (versión Knuth-Durstenfeld)</span>
-for i = n−1 downto 1:
-    j = entero aleatorio uniforme en [0, i]
+for i = N−1 downto 1:
+    j = entero aleatorio uniforme en [0, i]   <span class="comment">← cada posición elige su elemento con igual probabilidad</span>
     intercambiar arr[i] y arr[j]
     </div>
 
-    <p>En cada paso, el elemento que irá a la posición \(i\) se elige con probabilidad \(1/(i+1)\) entre los que aún no se han colocado. La probabilidad de cualquier permutación es exactamente \(1/n!\).</p>
+    <p>En cada paso, el elemento que ocupa la posición \(i\) se elige con probabilidad \(1/(i+1)\) entre los que aún no se han colocado. La probabilidad de cualquier permutación particular es exactamente \(1/N!\).</p>
 
-    <h3>Selección aleatoria ponderada entre empates</h3>
+    <h3>Selección aleatoria ponderada entre candidatas con igual IG</h3>
 
-    <p>Muchas preguntas tienen exactamente la misma IG (especialmente cuando comparten dificultad y número de opciones). Una selección determinista entre empates produciría tests repetitivos.</p>
-
-    <p>El sistema resuelve esto con <strong>selección ponderada inversamente por categoría</strong>:</p>
+    <p>Muchas preguntas tienen la misma IG cuando comparten dificultad y número de opciones. Una selección determinista entre empates produciría tests sistemáticamente repetitivos entre sesiones. El procedimiento correcto es:</p>
 
     <ol>
-      <li>Se calcula la IG de todas las preguntas disponibles.</li>
-      <li>Se forman las candidatas: todas las que tienen \(IG \geq IG_\max - \varepsilon\) (con \(\varepsilon = 10^{-9}\)).</li>
-      <li>A cada candidata se le asigna un peso \(w_q = 1 \big/ (1 + \text{veces que ya ha aparecido su categoría})\).</li>
-      <li>Se elige una candidata con probabilidad proporcional a su peso.</li>
+      <li>Calcular \(IG(q)\) para todas las preguntas disponibles.</li>
+      <li>Reunir las candidatas: todas con \(IG \geq IG_\max - \varepsilon\) (tolerancia numérica, \(\varepsilon \approx 10^{-9}\)).</li>
+      <li>Asignar a cada candidata un peso \(w_q = 1\big/(1 + \text{veces que ha aparecido su categoría o concepto})\).</li>
+      <li>Elegir una candidata con probabilidad proporcional a su peso.</li>
     </ol>
 
-    <p>Si la categoría «Historia» ya ha aparecido 2 veces y «Ciencia» 0 veces, los pesos respectivos son \(1/3\) y \(1/1 = 1\): Ciencia tiene tres veces más probabilidad de ser elegida. Esto garantiza diversidad de contenidos sin renunciar a la utilidad informativa.</p>
+    <p>El peso inversamente proporcional al recuento de categorías combina máxima utilidad informativa con diversidad temática, sin imponer restricciones rígidas. Si todas las categorías han aparecido el mismo número de veces, la selección es uniforme entre candidatas.</p>
   </section>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
   <section id="s10">
     <h2>10. Sesión de ejemplo completa</h2>
 
-    <p>Seguimos una sesión hipotética con tres preguntas para ilustrar cómo evoluciona la distribución.</p>
+    <div class="example" style="margin-bottom:1rem">
+      <div class="example-label">Ejemplo · Demo — n = 3 niveles · a = 1,5 · m_q = 4 · p_min = 0,80</div>
+      <p>Sesión hipotética de tres preguntas que ilustra la evolución de la distribución. Las barras muestran la probabilidad de cada hipótesis en porcentaje normalizado al nivel mayor.</p>
+    </div>
 
     <div class="session-step">
       <div class="session-header">Inicio — Prior uniforme</div>
       <div class="session-body">
-        <p>\(\pi^{(0)} = (33{,}3\%,\; 33{,}3\%,\; 33{,}3\%)\) &nbsp;·&nbsp; \(H = 1{,}585\) bits</p>
+        <p>\(\pi^{(0)} = (33{,}3\%,\; 33{,}3\%,\; 33{,}3\%)\) &nbsp;·&nbsp; \(H = 1{,}585\) bits &nbsp;·&nbsp; Progreso: 0 %</p>
         <div class="dist-bars">
           <div class="dist-bar-wrap">
             <div class="dist-bar-label">Básico</div>
@@ -779,16 +752,15 @@ for i = n−1 downto 1:
             <div class="dist-pct" style="color:#f59e0b">33 %</div>
           </div>
         </div>
-        <p style="color:var(--muted); font-size:0.85rem">La pregunta más informativa es la media (IG = 0,123 bits).</p>
+        <p style="color:var(--muted); font-size:0.85rem">Pregunta más informativa: la media (IG = 0,123 bits).</p>
       </div>
     </div>
 
     <div class="session-step">
-      <div class="session-header">Pregunta 1 — Media · Respuesta: INCORRECTA</div>
+      <div class="session-header">Pregunta 1 — Media (b = 0) · Respuesta: INCORRECTA</div>
       <div class="session-body">
-        <p>Verosimilitudes de fallo: \((\,0{,}613,\; 0{,}375,\; 0{,}137\,)\)</p>
-        <p>Numeradores: \(0{,}2043\;\;0{,}1250\;\;0{,}0457\) · Suma: \(0{,}3750\)</p>
-        <p>\(\pi^{(1)} = (54{,}5\%,\; 33{,}3\%,\; 12{,}2\%)\) &nbsp;·&nbsp; \(H = 1{,}375\) bits · Progreso: 32 %</p>
+        <p>Verosimilitudes de fallo: \((0{,}613,\; 0{,}375,\; 0{,}137)\) · Numeradores: \(0{,}2043\;\; 0{,}1250\;\; 0{,}0457\) · Z = 0,375</p>
+        <p>\(\pi^{(1)} = (54{,}5\%,\; 33{,}3\%,\; 12{,}2\%)\) &nbsp;·&nbsp; \(H = 1{,}375\) bits &nbsp;·&nbsp; Progreso: 32 %</p>
         <div class="dist-bars">
           <div class="dist-bar-wrap">
             <div class="dist-bar-label">Básico</div>
@@ -806,17 +778,15 @@ for i = n−1 downto 1:
             <div class="dist-pct" style="color:#f59e0b">12 %</div>
           </div>
         </div>
-        <p style="color:var(--muted); font-size:0.85rem">El fallo señala hacia nivel básico. La siguiente pregunta más informativa con este prior es la fácil (IG ≈ 0,079 bits), para distinguir entre básico y medio.</p>
+        <p style="color:var(--muted); font-size:0.85rem">El fallo concentra masa en Básico. La siguiente pregunta más informativa con este prior es una fácil, para distinguir entre básico y medio.</p>
       </div>
     </div>
 
     <div class="session-step">
-      <div class="session-header">Pregunta 2 — Fácil · Respuesta: CORRECTA</div>
+      <div class="session-header">Pregunta 2 — Fácil (b = −1) · Respuesta: CORRECTA</div>
       <div class="session-body">
-        <p>Prior: \((0{,}545,\; 0{,}333,\; 0{,}122)\) · Verosimilitudes de acierto: \((0{,}625,\; 0{,}863,\; 0{,}964)\)</p>
-        <p>P(A) = 0,545·0,625 + 0,333·0,863 + 0,122·0,964 = 0,341 + 0,287 + 0,118 = 0,746</p>
-        <p>Numeradores: \(\; 0{,}341\;\; 0{,}287\;\; 0{,}118 \;\) · Suma: \(0{,}746\)</p>
-        <p>\(\pi^{(2)} = (45{,}7\%,\; 38{,}5\%,\; 15{,}8\%)\) &nbsp;·&nbsp; \(H \approx 1{,}466\) bits · Progreso: 18 %</p>
+        <p>Verosimilitudes de acierto: \((0{,}625,\; 0{,}863,\; 0{,}964)\) · P(A) = 0,746 · Numeradores: \(0{,}341\;\; 0{,}287\;\; 0{,}118\)</p>
+        <p>\(\pi^{(2)} = (45{,}7\%,\; 38{,}5\%,\; 15{,}8\%)\) &nbsp;·&nbsp; \(H \approx 1{,}466\) bits &nbsp;·&nbsp; Progreso: 18 %</p>
         <div class="dist-bars">
           <div class="dist-bar-wrap">
             <div class="dist-bar-label">Básico</div>
@@ -834,16 +804,15 @@ for i = n−1 downto 1:
             <div class="dist-pct" style="color:#f59e0b">16 %</div>
           </div>
         </div>
-        <p style="color:var(--muted); font-size:0.85rem">El acierto en una pregunta fácil sube moderadamente la probabilidad de Medio (acertar una pregunta fácil siendo de nivel básico tampoco es raro: 62,5 %). La distribución retrocede hacia el centro: la entropía ha subido respecto a la anterior. Esto es esperable: la respuesta ha aportado poca información diferencial.</p>
+        <p style="color:var(--muted); font-size:0.85rem">El acierto en pregunta fácil es débilmente diagnóstico: un alumno básico también la acierta con 62,5 %. La entropía sube respecto al paso anterior porque el acierto no diferencia bien los niveles. Es esperable y correcto: la barra de progreso puede retroceder levemente.</p>
       </div>
     </div>
 
     <div class="session-step">
-      <div class="session-header">Pregunta 3 — Media · Respuesta: INCORRECTA</div>
+      <div class="session-header">Pregunta 3 — Media (b = 0) · Respuesta: INCORRECTA</div>
       <div class="session-body">
-        <p>Prior: \((0{,}457,\; 0{,}385,\; 0{,}158)\) · Verosimilitudes de fallo: \((0{,}613,\; 0{,}375,\; 0{,}137)\)</p>
-        <p>Numeradores: \(0{,}280\;\; 0{,}144\;\; 0{,}022\) · Suma: \(0{,}446\)</p>
-        <p>\(\pi^{(3)} = (62{,}8\%,\; 32{,}3\%,\; 4{,}9\%)\) &nbsp;·&nbsp; \(H \approx 1{,}134\) bits · Progreso: 68 %</p>
+        <p>Verosimilitudes de fallo: \((0{,}613,\; 0{,}375,\; 0{,}137)\) · Numeradores: \(0{,}280\;\; 0{,}144\;\; 0{,}022\) · Z = 0,446</p>
+        <p>\(\pi^{(3)} = (62{,}8\%,\; 32{,}3\%,\; 4{,}9\%)\) &nbsp;·&nbsp; \(H \approx 1{,}134\) bits &nbsp;·&nbsp; Progreso: 68 %</p>
         <div class="dist-bars">
           <div class="dist-bar-wrap">
             <div class="dist-bar-label">Básico</div>
@@ -861,13 +830,13 @@ for i = n−1 downto 1:
             <div class="dist-pct" style="color:#f59e0b">5 %</div>
           </div>
         </div>
-        <p style="color:var(--muted); font-size:0.85rem">Con 3 preguntas, Avanzado está casi descartado (5 %). La distribución se acerca al umbral de parada pero todavía no lo supera: max(π) = 63 % &lt; 80 %. El test continúa.</p>
+        <p style="color:var(--muted); font-size:0.85rem">Avanzado está prácticamente descartado. \(\max \pi = 63\% < 80\%\): el criterio de parada aún no se cumple. El test continúa con preguntas que apunten a la frontera básico/medio.</p>
       </div>
     </div>
 
     <div class="callout callout-green">
       <strong>Patrón observado</strong>
-      Con respuestas consistentes (fallo–acierto fácil–fallo media), el sistema identifica rápidamente que el nivel avanzado es improbable y concentra la incertidumbre en el dilema básico/medio. La progresión no es monotónamente decreciente en entropía: un acierto en una pregunta poco discriminante puede aumentar ligeramente la entropía. Lo importante es la tendencia a largo plazo.
+      La progresión no es monotónamente decreciente en entropía: un acierto en una pregunta débilmente discriminante puede subir la entropía levemente. Lo relevante es la tendencia a largo plazo. El sistema selecciona automáticamente preguntas más informativas a medida que la distribución se concentra.
     </div>
   </section>
 
@@ -875,40 +844,41 @@ for i = n−1 downto 1:
   <section id="s11">
     <h2>11. Convergencia: por qué el sistema aprende</h2>
 
-    <p>La actualización bayesiana garantiza que, con respuestas consistentes, la distribución converge hacia la hipótesis verdadera. El mecanismo es algebraicamente sencillo.</p>
-
-    <h3>Por qué la hipótesis verdadera acumula ventaja</h3>
-
-    <p>Supongamos que el nivel real del alumno es Básico. Tras \(n\) respuestas, la probabilidad de cada hipótesis es proporcional al producto de sus verosimilitudes:</p>
+    <p>La actualización bayesiana garantiza que, con respuestas consistentes, la distribución converge hacia la hipótesis verdadera. Tras \(t\) respuestas, la probabilidad de cada hipótesis es proporcional al producto de todas sus verosimilitudes:</p>
 
     <div class="mb">\[
-      \pi^{(n)}_i \propto \pi^{(0)}_i \cdot \prod_{k=1}^{n} P(R_k \mid H_i)
+      \pi^{(t)}_i \;\propto\; \pi^{(0)}_i \cdot \prod_{k=1}^{t} P(R_k \mid H_i)
     \]</div>
 
-    <p>Para que Básico acumule más que Medio, basta con que el producto de sus verosimilitudes sea mayor:</p>
+    <p>Para que la hipótesis verdadera \(H^*\) domine sobre cualquier otra \(H_j\), basta con que su producto de verosimilitudes crezca más rápido:</p>
 
     <div class="mb">\[
-      \prod_{k=1}^{n} P(R_k \mid H_0) > \prod_{k=1}^{n} P(R_k \mid H_1)
+      \prod_{k=1}^{t} P(R_k \mid H^*) \;\gg\; \prod_{k=1}^{t} P(R_k \mid H_j) \qquad \text{para todo } j \neq i^*
     \]</div>
 
-    <p>Esto ocurre cuando las respuestas son consistentes con el nivel básico: fallos en preguntas medias y difíciles, aciertos en fáciles. Cada respuesta que sigue ese patrón multiplica la probabilidad de Básico por un factor \(> 1\) relativo a Medio.</p>
+    <p>Esto ocurre cuando las respuestas son consistentes con \(H^*\): cada respuesta coherente multiplica su probabilidad por un factor mayor que 1 relativo a las demás. Los factores se acumulan multiplicativamente, lo que produce convergencia exponencialmente rápida.</p>
 
     <h3>Papel de la entropía</h3>
 
-    <p>La entropía cae porque los productos de verosimilitudes son distintos para cada hipótesis. Una vez que una hipótesis tiene mucha más probabilidad acumulada que las demás, los nuevos datos la refuerzan aún más (retroalimentación positiva), y la entropía cae rápidamente.</p>
+    <p>La entropía cae porque los productos de verosimilitudes son distintos para cada hipótesis. Una vez que una hipótesis tiene mucha más probabilidad que las demás, los nuevos datos la refuerzan aún más (retroalimentación positiva), y la entropía cae rápidamente hacia cero.</p>
 
-    <h3>¿Qué pasa con respuestas inconsistentes?</h3>
+    <h3>Respuestas inconsistentes</h3>
 
-    <p>Si el alumno acierta preguntas difíciles pero falla preguntas fáciles, las verosimilitudes de cada hipótesis se compensan parcialmente. La distribución no converge hacia ningún nivel y la entropía permanece alta. El sistema lo detecta y, si se alcanza \(MAX\_Q\), presenta el resultado como <strong>estimación provisional</strong>. Esta honestidad sobre la incertidumbre es una característica del diseño, no un defecto.</p>
+    <p>Si el alumno responde de forma inconsistente (acierta preguntas muy difíciles pero falla fáciles), las verosimilitudes de distintas hipótesis se compensan. La distribución no converge hacia ningún nivel y la entropía permanece alta. El sistema lo detecta: si se alcanza \(MAX\_Q\) sin cumplir el criterio de parada, el resultado se presenta como <strong>estimación provisional</strong>. Esta honestidad sobre la incertidumbre es una característica del diseño, no un defecto.</p>
 
     <div class="callout callout-red">
       <strong>Límite del modelo</strong>
-      Si el alumno responde al azar, las verosimilitudes de acierto y fallo para cada hipótesis son aproximadamente iguales (porque el suelo \(c_q = 0{,}25\) garantiza que incluso el nivel más bajo acierta con cierta frecuencia). En ese caso la distribución no converge, la entropía no cae, y el test termina por límite de preguntas con diagnóstico provisional. El sistema no puede distinguir entre un alumno que no sabe y uno que responde aleatoriamente.
+      Si el alumno responde al azar, las verosimilitudes de acierto y fallo para cada hipótesis son cercanas entre sí (el suelo \(c_q > 0\) reduce el rango diagnóstico de los aciertos). La distribución no converge y el test termina por límite de preguntas con diagnóstico provisional. El sistema no puede distinguir entre ignorancia genuina y respuesta aleatoria. Cuanto mayor es \(c_q\) (menos opciones por pregunta), más pronunciado es este problema.
     </div>
 
     <h3>Recuperación automática</h3>
 
-    <p>Si el alumno falla las primeras preguntas pero luego acierta preguntas difíciles, el posterior se desplaza: la probabilidad de Básico sube inicialmente, pero los aciertos en preguntas difíciles tienen verosimilitudes muy desfavorables para Básico (\(P(\text{acierto}\mid H_0, b=1) = 28{,}6\%\)) y muy favorables para Avanzado (\(86{,}3\%\) para Avanzado en una difícil). Tras suficientes aciertos difíciles, Avanzado recupera probabilidad de forma automática, sin ninguna lógica de recuperación adicional. La recuperación es gradual y proporcional a la evidencia acumulada.</p>
+    <p>Si el alumno falla las primeras preguntas pero luego acierta preguntas difíciles, la hipótesis de nivel alto acumula factores favorables progresivamente. No se necesita ninguna lógica de recuperación explícita: la actualización bayesiana reorienta la distribución y la selección por IG elige automáticamente preguntas más exigentes a medida que la distribución se desplaza. La recuperación es gradual y proporcional a la coherencia de la evidencia acumulada.</p>
+
+    <div class="example">
+      <div class="example-label">Ejemplo · Demo — Recuperación</div>
+      <p>Si el alumno falla las primeras preguntas medias (verosimilitud de fallo para Básico: 61,3 % frente a 13,7 % para Avanzado) pero luego acierta difíciles (verosimilitud de acierto para Avanzado: 62,5 % frente a 28,6 % para Básico), los productos acumulados de Avanzado superan a los de Básico tras suficientes aciertos difíciles, sin ninguna instrucción adicional.</p>
+    </div>
   </section>
 
 </div>

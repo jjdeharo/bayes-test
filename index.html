@@ -100,14 +100,21 @@
     .feature-item .fi { font-size: 1.4rem; margin-bottom: 0.2rem; }
     .feature-item .fl { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
 
-    /* WELCOME BOTTOM GRID */
-    .welcome-bottom {
+    /* WELCOME RESOURCES */
+    .welcome-divider {
+      border-top: 1px solid var(--border);
+      margin: 1rem -1.5rem;
+    }
+    .welcome-resources {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 0;
+      gap: 1.25rem;
+      padding-top: 0.25rem;
     }
-    .welcome-bottom .card { margin-bottom: 0; }
+    .wr-col { display: flex; flex-direction: column; gap: 0.5rem; }
+    @media (max-width: 640px) {
+      .welcome-resources { grid-template-columns: 1fr; }
+    }
 
     /* PROGRESS */
     .progress-section { margin-bottom: 1.25rem; }
@@ -136,8 +143,6 @@
     }
     @media (max-width: 640px) {
       .quiz-layout { grid-template-columns: 1fr; }
-      .feature-grid { grid-template-columns: 1fr; }
-      .welcome-bottom { grid-template-columns: 1fr; }
     }
 
     /* BADGES */
@@ -465,65 +470,44 @@
         <div class="icon">🧠</div>
         <h2>Test que aprende de ti</h2>
         <p>
-          Cada respuesta actualiza una distribución de probabilidad sobre tu nivel de conocimiento.
-          El sistema aplica el <strong>teorema de Bayes</strong> para elegir dinámicamente
-          la siguiente pregunta más informativa.
+          Cada respuesta actualiza la estimación bayesiana sobre tu nivel.
+          El sistema aplica el <strong>teorema de Bayes</strong> y la <strong>entropía de Shannon</strong>
+          para elegir dinámicamente la pregunta más informativa en cada momento.
         </p>
-        <div class="feature-grid">
-          <div class="feature-item"><div class="fi">🎯</div><div class="fl">Adaptativo</div></div>
-          <div class="feature-item"><div class="fi">📊</div><div class="fl">Probabilístico</div></div>
-          <div class="feature-item"><div class="fi">⚡</div><div class="fl">6–15 preguntas</div></div>
-        </div>
         <button class="btn btn-primary" onclick="startQuiz()">▶ Comenzar el test</button>
       </div>
-    </div>
 
-    <div class="welcome-bottom">
-    <div class="card explainer">
-      <h3>¿Cómo funciona?</h3>
-      <p>
-        El sistema mantiene tres hipótesis: <strong>Básico</strong>, <strong>Medio</strong>
-        y <strong>Avanzado</strong>. Antes de la primera pregunta, las tres tienen igual
-        probabilidad (33 %). Tras cada respuesta se aplica la regla de Bayes:
-        la probabilidad de cada nivel se multiplica por la verosimilitud de haber
-        obtenido esa respuesta dado ese nivel, y se renormaliza.
-        La siguiente pregunta se elige maximizando la ganancia de información esperada
-        (reducción de entropía de Shannon).
-      </p>
-    </div>
+      <div class="welcome-divider"></div>
 
-    <div class="card explainer">
-      <h3>Documentación y recursos</h3>
-
-      <div class="res-section">
-        <div class="res-label">Para leer</div>
-        <a class="resource-link" href="documentacion.html">
-          <span class="rl-icon">📖</span>
-          <span class="rl-body">
-            <span>Protocolo de evaluación adaptativa bayesiana</span>
-            <span class="rl-desc">Guía completa: fundamentos, matemáticas, diseño pedagógico y criterios de implementación</span>
-          </span>
-        </a>
-      </div>
-
-      <div class="res-section">
-        <div class="res-label">Para replicar este sistema con una IA</div>
-        <div class="ai-block">
-          <div class="ai-block-row">
-            <span style="font-size:1.1rem">🤖</span>
-            <span style="font-size:0.82rem;font-weight:600;color:#4c1d95">Proporciona a la IA el documento y este prompt:</span>
-          </div>
-          <div class="ai-prompt-wrap">
-            <div class="ai-prompt-text" id="ai-prompt-text">Lee el documento adjunto para entender el diseño del sistema y usa el apartado §22 como especificación técnica de implementación.</div>
-            <button class="ai-copy-btn" id="ai-copy-btn" onclick="copyAiPrompt()">Copiar</button>
-          </div>
-          <a class="ai-dl-btn" href="documentacion_evaluacion_adaptativa_bayesiana.md" download>
-            ⬇ Descargar documento (.md)
+      <div class="welcome-resources">
+        <div class="wr-col">
+          <div class="res-label">Para leer</div>
+          <a class="resource-link" href="documentacion.html">
+            <span class="rl-icon">📖</span>
+            <span class="rl-body">
+              <span>Protocolo de evaluación adaptativa bayesiana</span>
+              <span class="rl-desc">Guía completa: fundamentos, matemáticas y diseño pedagógico</span>
+            </span>
           </a>
+        </div>
+        <div class="wr-col">
+          <div class="res-label">Para replicar con una IA</div>
+          <div class="ai-block">
+            <div class="ai-block-row">
+              <span style="font-size:1rem">🤖</span>
+              <span style="font-size:0.78rem;font-weight:600;color:#4c1d95">Adjunta el documento y copia este prompt:</span>
+            </div>
+            <div class="ai-prompt-wrap">
+              <div class="ai-prompt-text" id="ai-prompt-text">Lee el documento adjunto para entender el diseño del sistema y usa el apartado §22 como especificación técnica de implementación.</div>
+              <button class="ai-copy-btn" id="ai-copy-btn" onclick="copyAiPrompt()">Copiar</button>
+            </div>
+            <a class="ai-dl-btn" href="documentacion_evaluacion_adaptativa_bayesiana.md" download>
+              ⬇ Descargar documento (.md)
+            </a>
+          </div>
         </div>
       </div>
     </div>
-    </div><!-- /welcome-bottom -->
   </div>
 </div>
 

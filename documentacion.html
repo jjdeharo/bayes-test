@@ -606,6 +606,7 @@
 
   <section id="s19">
     <h2>19. Adaptación al contexto docente</h2>
+    <p>El concepto de recurso educativo adaptativo debe entenderse de forma amplia. Un test adaptativo es solo un caso particular. La misma lógica puede aplicarse a explicaciones, prácticas, simuladores, itinerarios, sistemas de pistas, actividades de refuerzo, ampliación o recomendación de recursos. Lo importante es que el recurso tome decisiones pedagógicas a partir de las evidencias que obtiene durante la interacción con el alumno.</p>
     <p>La implementación concreta debe adaptarse al contexto educativo que indique el docente.</p>
     <p>Antes de diseñar el sistema, conviene recoger información sobre:</p>
     <ul>
@@ -613,13 +614,15 @@
       <li>edad o curso del alumnado;</li>
       <li>objetivos de aprendizaje;</li>
       <li>número de niveles o hipótesis;</li>
-      <li>tipos de preguntas permitidas;</li>
-      <li>número aproximado de preguntas;</li>
+      <li>tipos de preguntas o interacciones permitidas;</li>
+      <li>número aproximado de preguntas o pasos;</li>
       <li>duración máxima;</li>
-      <li>finalidad de la evaluación;</li>
+      <li>tipo de recurso adaptativo deseado (evaluación, práctica, itinerario, tutorial, simulador, juego, recomendador, repaso…);</li>
+      <li>finalidad principal (detectar nivel, identificar errores, reforzar, practicar, consolidar, ampliar, guiar, recomendar…);</li>
+      <li>qué debe adaptar el sistema (dificultad, tipo de actividad, explicación, ayuda, pistas, ritmo, itinerario…);</li>
+      <li>tipo de salida esperada (diagnóstico, informe de progreso, ruta de aprendizaje, propuesta de siguiente actividad…);</li>
       <li>formato deseado;</li>
-      <li>grado de precisión necesario;</li>
-      <li>si se desea diagnóstico, refuerzo, práctica, ampliación o evaluación formativa.</li>
+      <li>grado de precisión necesario.</li>
     </ul>
     <p>El sistema debe adaptar sus decisiones a ese contexto.</p>
   </section>
@@ -632,10 +635,14 @@
       <p><strong>Curso o edad:</strong></p>
       <p><strong>Objetivo de aprendizaje:</strong></p>
       <p><strong>Número de niveles o hipótesis:</strong></p>
-      <p><strong>Tipos de preguntas permitidas:</strong></p>
-      <p><strong>Número aproximado de preguntas:</strong></p>
+      <p><strong>Tipo de recurso adaptativo:</strong> evaluación diagnóstica · evaluación formativa · práctica graduada · actividad de refuerzo · actividad de ampliación · itinerario de aprendizaje · tutorial interactivo · simulador · laboratorio virtual · juego educativo · recomendador de recursos · repaso espaciado · otro</p>
+      <p><strong>Finalidad principal:</strong> detectar nivel de dominio · identificar errores conceptuales · reforzar dificultades · practicar procedimientos · consolidar contenidos · ampliar conocimientos · guiar un itinerario · ofrecer pistas graduadas · personalizar explicaciones · recomendar recursos · preparar una evaluación · repasar contenidos anteriores</p>
+      <p><strong>Qué debe adaptar el sistema:</strong> la siguiente pregunta · la dificultad · el tipo de actividad · la explicación · la cantidad de ayuda · las pistas · el ritmo · el itinerario · el recurso recomendado · el nivel de reto · el momento de finalizar</p>
+      <p><strong>Tipo de respuesta o interacción del alumno:</strong> opción múltiple · verdadero/falso · selección múltiple · emparejamiento · ordenación · respuesta numérica · respuesta breve exacta · elección de ruta · manipulación de variables · interacción con simulador · selección de pistas · resolución paso a paso</p>
+      <p><strong>Tipo de salida esperada:</strong> diagnóstico pedagógico · recomendación de refuerzo · recomendación de ampliación · informe de progreso · explicación personalizada · ruta de aprendizaje · secuencia de práctica · resumen de errores frecuentes · propuesta de siguiente actividad</p>
+      <p><strong>Tipos de preguntas o interacciones permitidas:</strong></p>
+      <p><strong>Número aproximado de preguntas o pasos:</strong></p>
       <p><strong>Duración máxima:</strong></p>
-      <p><strong>Finalidad:</strong></p>
       <p><strong>Formato deseado:</strong></p>
       <p><strong>Grado de precisión deseado:</strong></p>
       <p><strong>Observaciones sobre el alumnado:</strong></p>
@@ -715,7 +722,18 @@ Usa solo preguntas autocorregibles (opción múltiple, verdadero/falso, numéric
 Presenta una interpretación pedagógica: qué domina el alumno, qué dificultades muestra, qué lagunas conviene revisar, qué se recomienda como siguiente paso. Muestra el nivel de confianza de la estimación (probabilidad de la hipótesis más probable). Si la entropía final supera H_stop, indica explícitamente que el diagnóstico es provisional. No te limites a mostrar una puntuación o etiqueta.
 
 <strong>9. Adaptación al contexto.</strong>
-Antes de implementar, recoge del docente: tema o unidad, curso o edad, objetivos de aprendizaje, número de hipótesis, tipos de pregunta permitidos, número aproximado de preguntas, duración máxima y finalidad (diagnóstico, refuerzo, práctica, ampliación o evaluación formativa). Adapta los valores de θ_i, b_q, n, p_min y el número mínimo y máximo de preguntas a ese contexto.</div>
+Antes de implementar, recoge del docente: tema o unidad, curso o edad, objetivos de aprendizaje, número de hipótesis, tipos de pregunta o interacción permitidos, número aproximado de preguntas o pasos, duración máxima, tipo de recurso adaptativo y finalidad principal. Adapta los valores de θ_i, b_q, n, p_min y el número mínimo y máximo de preguntas a ese contexto.
+
+<strong>10. Tipo de recurso.</strong>
+El sistema no debe limitarse a crear recursos de evaluación. Puede generar cualquier tipo de recurso educativo adaptativo según la finalidad indicada por el docente: itinerarios de aprendizaje personalizados, explicaciones adaptativas, práctica graduada, actividades de refuerzo o ampliación, tutoriales interactivos, simuladores con ayudas adaptativas, laboratorios virtuales guiados, sistemas de pistas graduadas, retroalimentación personalizada, juegos educativos adaptativos, recomendadores de recursos o actividades de repaso espaciado.
+
+En todos los casos, la adaptación debe responder a la situación del alumno. Si el alumno muestra dominio, el sistema puede avanzar, ampliar o aumentar la complejidad. Si muestra dificultades, puede ofrecer ayuda, explicación, práctica guiada o refuerzo. Si aparecen errores concretos, puede proponer actividades dirigidas a corregirlos.
+
+La finalidad de la adaptación no tiene por qué ser solo estimar un nivel. También puede ser decidir qué explicación mostrar, qué pista ofrecer, qué ejercicio proponer, qué recurso recomendar, qué itinerario seguir o cuándo pasar de refuerzo a ampliación.
+
+Cuando el recurso no sea una evaluación, el sistema debe seguir usando la información obtenida durante la interacción para adaptar la experiencia. Puede mantener hipótesis sobre el estado del alumno, actualizar esas hipótesis con sus respuestas o acciones, medir la incertidumbre cuando sea útil y tomar decisiones pedagógicas en función de esa estimación.
+
+El resultado final debe ajustarse al tipo de recurso: en una evaluación, ofrece un diagnóstico; en una actividad de aprendizaje, indica el recorrido seguido y las ayudas usadas; en una práctica adaptativa, muestra progreso y recomendaciones; en un recurso de refuerzo o ampliación, explica qué contenidos se han trabajado y cuál sería el siguiente paso.</div>
     </div><!-- /prompt-wrap -->
   </section>
 

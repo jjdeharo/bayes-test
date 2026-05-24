@@ -452,7 +452,8 @@ El proceso debe terminar cuando haya una seguridad razonable sobre el estado de 
 Los criterios posibles son:
 
 - **La entropía cae por debajo del umbral \(H_{\text{stop}}\) y la hipótesis más probable supera \(p_{\min}\).** Ambos criterios son complementarios y conviene comprobar los dos: \(H_{\text{stop}}\) se calcula suponiendo distribución uniforme del resto, lo que es una aproximación (véase §9).
-- **Se alcanza un número máximo de preguntas.** Este límite puede calcularse de forma analítica mediante búsqueda minimax sobre el árbol de respuestas posibles: ¿cuántas preguntas serían necesarias en el peor caso para alcanzar \(H < H_{\text{stop}}\) con una política de selección óptima? Ese valor puede mostrarse al usuario como referencia de transparencia.
+- **Se alcanza un número máximo de preguntas.** Conviene distinguir entre un máximo teórico y un máximo práctico. El primero puede estimarse mediante búsqueda minimax sobre el árbol de respuestas posibles; el segundo debe fijarse por usabilidad. En una demo o herramienta educativa breve puede imponerse, por ejemplo, un tope duro de 20 preguntas, mostrando resultado provisional si no se ha convergido antes.
+- **La mejor pregunta disponible deja de ser útil.** Si, tras un número suficiente de preguntas, la ganancia esperada de información de la mejor candidata cae por debajo de un umbral mínimo, conviene detener la sesión y devolver un diagnóstico provisional en lugar de alargarla artificialmente.
 - Ya se han cubierto los conceptos mínimos previstos.
 - No quedan preguntas útiles disponibles.
 - El coste de seguir preguntando supera la ganancia pedagógica esperada.
@@ -604,4 +605,3 @@ El sistema puede ayudar a orientar decisiones, pero sus resultados deben interpr
 - la entropía final sigue siendo alta.
 
 El valor principal del enfoque está en hacer explícita la incertidumbre y en adaptar la actividad a las evidencias disponibles.
-

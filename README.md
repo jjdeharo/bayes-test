@@ -148,7 +148,7 @@ $$H_0 = \log_2 3 \approx 1{,}585 \text{ bits}$$
 
 $$H_{\text{stop}} = -(0{,}80\log_2 0{,}80 + 0{,}10\log_2 0{,}10 + 0{,}10\log_2 0{,}10) \approx 0{,}922 \text{ bits}$$
 
-**Número máximo de preguntas** — se calcula mediante búsqueda minimax sobre el árbol completo de respuestas posibles. En cada nodo el sistema elige la pregunta más informativa disponible (máxima $IG$) y se explora el peor caso de respuesta posible. La profundidad máxima del árbol antes de alcanzar $H < H_{\text{stop}}$ es $MAX\_Q$, garantizando que el test termina en ese número de preguntas sea cual sea la secuencia de respuestas. Este valor se muestra en la interfaz como referencia de transparencia.
+**Número máximo de preguntas** — el sistema combina dos ideas. Primero calcula un peor caso estadístico sobre el banco real agrupando preguntas con los mismos parámetros (`dificultad` y `opciones`). Segundo, aplica un **límite práctico duro de 20 preguntas** para que la experiencia siga siendo usable. Además, a partir de la pregunta 12 puede detenerse antes si la mejor pregunta disponible aporta menos de **0,015 bits** de información esperada. En esta demo, el valor mostrado como $MAX\_Q$ es por tanto un techo práctico, no solo teórico.
 
 La barra de progreso refleja la **reducción relativa de entropía** hacia $H_{\text{stop}}$:
 
@@ -169,7 +169,7 @@ Al terminar el test, el sistema genera una interpretación pedagógica estructur
 - **Recomendación:** acción concreta según el nivel estimado (refuerzo, consolidación o ampliación)
 - **Grado de certeza:** si el diagnóstico es firme (ambos criterios de parada cumplidos) o provisional
 
-Cuando el test termina por límite de preguntas sin haber convergido, el resultado se marca visualmente como **estimación provisional** y el texto lo indica explícitamente. Un diagnóstico provisional puede ocurrir cuando el patrón de respuestas es inusual (por ejemplo, varios fallos iniciales seguidos de muchos aciertos), situación en la que la incertidumbre es genuinamente alta y sería incorrecto presentar el resultado como definitivo.
+Cuando el test termina sin haber convergido, el resultado se marca visualmente como **estimación provisional** y el texto lo indica explícitamente. Esto puede ocurrir por límite práctico de preguntas o por baja utilidad marginal de las preguntas restantes. Un diagnóstico provisional puede aparecer cuando el patrón de respuestas es inusual (por ejemplo, varios fallos iniciales seguidos de muchos aciertos), situación en la que la incertidumbre es genuinamente alta y sería incorrecto presentar el resultado como definitivo.
 
 ---
 
@@ -188,6 +188,27 @@ Las categorías incluyen: Geografía, Historia, Ciencia, Arte, Literatura, Filos
 Cada sesión utiliza entre 6 y $MAX\_Q$ preguntas, seleccionadas adaptativamente. La combinación de 90 preguntas disponibles, selección aleatoria ponderada y adaptación al nivel hace que dos sesiones rara vez compartan la misma secuencia.
 
 Las preguntas están definidas en `questions.js`, separado de la lógica del sistema, lo que facilita ampliar o modificar el banco sin tocar el algoritmo.
+
+## Simulación reproducible
+
+Para validar el comportamiento del selector y del criterio de parada:
+
+```bash
+node scripts/simulate.js
+```
+
+Opciones útiles:
+
+```bash
+node scripts/simulate.js --runs 10000 --observed-runs 5000 --seed 42
+```
+
+El script informa de:
+
+- casos deterministas sencillos;
+- Monte Carlo por nivel;
+- peor caso teórico bajo la política actual;
+- camino largo observado en respondedores aleatorios.
 
 ---
 
@@ -211,6 +232,8 @@ Las preguntas están definidas en `questions.js`, separado de la lógica del sis
 bayes-test/
 ├── index.html                                    Interfaz y lógica del sistema bayesiano
 ├── questions.js                                  Banco de 90 preguntas
+├── scripts/
+│   └── simulate.js                               Simulaciones reproducibles del motor adaptativo
 ├── documentacion.html                            Protocolo para crear sistemas adaptativos bayesianos
 ├── matematicas.html                              Explicación matemática detallada con ejemplos numéricos
 ├── documentacion_evaluacion_adaptativa_bayesiana.md  Fuente de la documentación (Markdown)

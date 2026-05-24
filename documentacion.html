@@ -577,7 +577,8 @@
     <p>Los criterios posibles son:</p>
     <ul>
       <li><strong>La entropía cae por debajo del umbral \(H_{\text{stop}}\) y la hipótesis más probable supera \(p_{\min}\).</strong> Ambos criterios son complementarios y conviene comprobar los dos: \(H_{\text{stop}}\) se calcula suponiendo distribución uniforme del resto, lo que es una aproximación (véase §9).</li>
-      <li><strong>Se alcanza un número máximo de preguntas.</strong> Este límite puede calcularse de forma analítica mediante búsqueda minimax sobre el árbol de respuestas posibles: ¿cuántas preguntas serían necesarias en el peor caso para alcanzar \(H &lt; H_{\text{stop}}\) con una política de selección óptima? Ese valor puede mostrarse al usuario como referencia de transparencia.</li>
+      <li><strong>Se alcanza un número máximo de preguntas.</strong> Conviene distinguir entre un máximo teórico y un máximo práctico. El primero puede estimarse mediante búsqueda minimax sobre el árbol de respuestas posibles; el segundo debe fijarse por usabilidad. En una demo o herramienta educativa breve puede imponerse, por ejemplo, un tope duro de 20 preguntas, mostrando resultado provisional si no se ha convergido antes.</li>
+      <li><strong>La mejor pregunta disponible deja de ser útil.</strong> Si, tras un número suficiente de preguntas, la ganancia esperada de información de la mejor candidata cae por debajo de un umbral mínimo, conviene detener la sesión y devolver un diagnóstico provisional en lugar de alargarla artificialmente.</li>
       <li>Ya se han cubierto los conceptos mínimos previstos.</li>
       <li>No quedan preguntas útiles disponibles.</li>
       <li>El coste de seguir preguntando supera la ganancia pedagógica esperada.</li>

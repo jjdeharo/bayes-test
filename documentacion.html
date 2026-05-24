@@ -28,7 +28,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { overflow-x: clip; }
+    html { overflow-x: clip; scrollbar-gutter: stable; }
 
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -40,11 +40,22 @@
     .header {
       background: linear-gradient(135deg, #4f46e5, #7c3aed);
       color: white;
-      padding: 2rem 2rem 1.5rem;
+      padding: 1.25rem 2rem 1.5rem;
       text-align: center;
+      position: relative;
     }
     .header h1 { font-size: 1.5rem; font-weight: 700; }
     .header p  { font-size: 0.9rem; opacity: 0.85; margin-top: 0.4rem; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      margin-bottom: 0.6rem;
+    }
+    .back-link:hover { color: white; text-decoration: underline; }
 
     .container {
       max-width: 860px;
@@ -179,10 +190,12 @@
     }
 
     .site-footer {
+      background: #1e293b;
+      color: #94a3b8;
       text-align: center;
       font-size: 0.82rem;
-      color: var(--muted);
-      padding: 1.5rem 1rem 2rem;
+      padding: 1.1rem 1.5rem;
+      line-height: 1.8;
     }
     .site-footer a { color: var(--primary-light); text-decoration: none; }
     .site-footer a:hover { text-decoration: underline; }
@@ -197,6 +210,7 @@
 <body>
 
 <div class="header">
+  <a class="back-link" href="index.html">← Inicio</a>
   <h1>Protocolo para sistemas educativos adaptativos bayesianos</h1>
   <p>Guía técnica para implementar evaluación adaptativa con inferencia bayesiana y entropía de Shannon</p>
 </div>

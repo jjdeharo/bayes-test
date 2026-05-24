@@ -18,17 +18,19 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { overflow-x: clip; }
+    html { overflow-x: clip; scrollbar-gutter: stable; }
 
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg);
-      min-height: 100vh;
       color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     .screen { display: none; }
-    .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+    .screen.active { display: flex; flex-direction: column; flex: 1; }
 
     /* HEADER */
     .header {

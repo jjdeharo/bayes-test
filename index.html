@@ -337,11 +337,15 @@
     .explainer p  { font-size: 0.875rem; color: var(--muted); line-height: 1.75; }
 
     /* RESOURCE LINKS */
-    .resource-links {
-      display: flex;
-      flex-direction: column;
-      gap: 0.65rem;
-      margin-top: 0.25rem;
+    .res-section { margin-top: 0.75rem; }
+    .res-section + .res-section { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+    .res-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
     }
     .resource-link {
       display: flex;
@@ -358,9 +362,69 @@
       transition: background 0.15s, border-color 0.15s;
     }
     .resource-link:hover { background: #e0e7ff; border-color: #818cf8; }
-    .resource-link .rl-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .resource-link .rl-icon { font-size: 1.15rem; flex-shrink: 0; }
     .resource-link .rl-body { display: flex; flex-direction: column; gap: 0.1rem; }
     .resource-link .rl-desc { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+    .ai-block {
+      background: #f8f7ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 0.6rem;
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .ai-block-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .ai-dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #ede9fe;
+      border: 1px solid #c4b5fd;
+      border-radius: 0.45rem;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #5b21b6;
+      text-decoration: none;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .ai-dl-btn:hover { background: #ddd6fe; }
+    .ai-prompt-label { font-size: 0.75rem; color: var(--muted); }
+    .ai-prompt-wrap { position: relative; }
+    .ai-prompt-text {
+      font-size: 0.8rem;
+      font-style: italic;
+      color: #4c1d95;
+      background: #ede9fe;
+      border: 1px solid #c4b5fd;
+      border-radius: 0.45rem;
+      padding: 0.5rem 2.8rem 0.5rem 0.75rem;
+      line-height: 1.5;
+      user-select: all;
+    }
+    .ai-copy-btn {
+      position: absolute;
+      top: 50%;
+      right: 0.5rem;
+      transform: translateY(-50%);
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .ai-copy-btn:hover { background: #5b21b6; }
+    .ai-copy-btn.copied { background: #059669; }
 
     /* FOOTER */
     .site-footer {
@@ -418,21 +482,33 @@
 
     <div class="card explainer">
       <h3>Documentación y recursos</h3>
-      <div class="resource-links">
+
+      <div class="res-section">
+        <div class="res-label">Para leer</div>
         <a class="resource-link" href="documentacion.html">
           <span class="rl-icon">📖</span>
           <span class="rl-body">
             <span>Protocolo de evaluación adaptativa bayesiana</span>
-            <span class="rl-desc">Guía completa del método: matemáticas, diseño pedagógico e instrucción maestra para IA</span>
+            <span class="rl-desc">Guía completa: fundamentos, matemáticas, diseño pedagógico y criterios de implementación</span>
           </span>
         </a>
-        <a class="resource-link" href="documentacion_evaluacion_adaptativa_bayesiana.md" download>
-          <span class="rl-icon">🤖</span>
-          <span class="rl-body">
-            <span>Protocolo en Markdown · para proporcionar a una IA</span>
-            <span class="rl-desc">Lee el documento completo para entender el diseño; usa §22 como especificación técnica de implementación</span>
-          </span>
-        </a>
+      </div>
+
+      <div class="res-section">
+        <div class="res-label">Para replicar este sistema con una IA</div>
+        <div class="ai-block">
+          <div class="ai-block-row">
+            <span style="font-size:1.1rem">🤖</span>
+            <span style="font-size:0.82rem;font-weight:600;color:#4c1d95">Proporciona a la IA el documento y este prompt:</span>
+          </div>
+          <div class="ai-prompt-wrap">
+            <div class="ai-prompt-text" id="ai-prompt-text">Lee el documento adjunto para entender el diseño del sistema y usa el apartado §22 como especificación técnica de implementación.</div>
+            <button class="ai-copy-btn" id="ai-copy-btn" onclick="copyAiPrompt()">Copiar</button>
+          </div>
+          <a class="ai-dl-btn" href="documentacion_evaluacion_adaptativa_bayesiana.md" download>
+            ⬇ Descargar documento (.md)
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -777,6 +853,21 @@ function selectNext() {
 }
 
 // ─── UI HELPERS ───────────────────────────────────────────────────────────────
+
+function copyAiPrompt() {
+  const text = document.getElementById('ai-prompt-text').innerText;
+  const btn  = document.getElementById('ai-copy-btn');
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '¡Copiado!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+  }).catch(function() {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = '¡Copiado!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+  });
+}
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));

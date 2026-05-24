@@ -289,13 +289,20 @@
 
     <p>El sistema no trabaja con una estimación puntual del nivel del alumno, sino con una <strong>distribución de probabilidades</strong> sobre \(n\) hipótesis \(H_0, H_1, \ldots, H_{n-1}\). Las hipótesis pueden ser niveles jerárquicos, errores conceptuales, necesidades de refuerzo u otras categorías pedagógicas pertinentes.</p>
 
-    <p>A cada hipótesis se le asigna un valor numérico \(\theta_i\) que la posiciona en la escala que comparte con la dificultad de las preguntas. La convención recomendada es centrar los valores en cero con intervalos iguales:</p>
+    <p>A cada hipótesis se le asigna un valor numérico \(\theta_i\) que la posiciona en la escala de habilidad. Los valores deben ser simétricos respecto al cero y espaciados uniformemente:</p>
 
     <div class="mb">\[
-      \theta_i = -\frac{n-1}{2} + i \qquad i = 0, 1, \ldots, n-1
+      \theta_i = -\frac{n-1}{2}\cdot s + i\cdot s \qquad i = 0, 1, \ldots, n-1
     \]</div>
 
-    <p>Esto produce valores simétricos respecto al cero: para \(n=2\), \((-0{,}5,\; +0{,}5)\); para \(n=3\), \((-1,\; 0,\; +1)\); para \(n=4\), \((-1{,}5,\; -0{,}5,\; +0{,}5,\; +1{,}5)\), etc. La misma convención se aplica a la dificultad \(b_q\) de las preguntas, garantizando que ambas escalas sean comparables.</p>
+    <p>donde \(s\) es el paso entre niveles consecutivos. La dificultad de las preguntas \(b_q\) usa la misma escala. Sin embargo, es imprescindible que las escalas no coincidan en sus extremos:</p>
+
+    <div class="callout callout-amber">
+      <strong>Invariante crítica: \(\max|\theta_i| > \max|b_q|\)</strong><br>
+      Si el nivel más extremo \(\theta_{\max}\) coincide con la dificultad más extrema \(b_{\max}\), la curva IRT devuelve exactamente \((1+c_q)/2\) para ese par — el punto de inflexión de la curva logística. En esa zona la ganancia de información del algoritmo adaptativo es mínima, y el sistema nunca selecciona preguntas de ese tipo de dificultad, sea cual sea el patrón de respuestas. La escala de \(\theta\) debe abarcar un rango estrictamente mayor que el de \(b_q\); un factor de 2 funciona bien en la práctica: \(|\theta_{\max}| = 2\cdot|b_{\max}|\).
+    </div>
+
+    <p>Con \(s = 1\) y \(n = 3\): \(\theta = (-1,\; 0,\; +1)\) — rango ±1, igual al de \(b\). Con \(s = 2\) y \(n = 3\): \(\theta = (-2,\; 0,\; +2)\) — rango ±2, doble del de \(b\). Este segundo caso cumple la invariante.</p>
 
     <h3>Prior inicial: ignorancia total</h3>
 
@@ -317,11 +324,12 @@
       <table>
         <thead><tr><th>Hipótesis</th><th>Valor \(\theta_i\)</th><th>Significado</th></tr></thead>
         <tbody>
-          <tr><td>\(H_0\) — Básico</td><td>\(-1\)</td><td>Conocimiento básico o escaso</td></tr>
+          <tr><td>\(H_0\) — Básico</td><td>\(-2\)</td><td>Conocimiento básico o escaso</td></tr>
           <tr><td>\(H_1\) — Medio</td><td>\(0\)</td><td>Conocimiento medio o consolidado</td></tr>
-          <tr><td>\(H_2\) — Avanzado</td><td>\(+1\)</td><td>Conocimiento avanzado o sólido</td></tr>
+          <tr><td>\(H_2\) — Avanzado</td><td>\(+2\)</td><td>Conocimiento avanzado o sólido</td></tr>
         </tbody>
       </table>
+      <p>Con \(s = 2\): rango \(\theta \in [-2, +2]\), doble que el rango de dificultades \(b \in [-1, +1]\). Cumple la invariante \(\max|\theta_i| > \max|b_q|\). El valor de \(\theta\) se calcula automáticamente como \(\pm 2\cdot b_{\max}\) a partir del banco de preguntas.</p>
       <p>Prior inicial: \(\pi^{(0)} = (1/3,\; 1/3,\; 1/3) \approx 33{,}3\%\) para cada nivel.</p>
     </div>
   </section>
@@ -340,7 +348,7 @@
 
     <p>Los tres parámetros son:</p>
     <ul>
-      <li><strong>\(b_q\)</strong> — dificultad de la pregunta, en la misma escala numérica que los \(\theta_i\).</li>
+      <li><strong>\(b_q\)</strong> — dificultad de la pregunta, en la misma escala numérica que los \(\theta_i\), pero con rango estrictamente menor: \(\max|b_q| < \max|\theta_i|\).</li>
       <li><strong>\(a\)</strong> — discriminación: controla lo rápido que cambia la probabilidad alrededor de \(\theta_i = b_q\). Valores habituales: 0,5–2,5; un buen punto de partida es \(a = 1{,}5\).</li>
       <li><strong>\(c_q = 1/m_q\)</strong> — probabilidad mínima de acierto por azar, siendo \(m_q\) el número de opciones. Pertenece a cada pregunta individualmente: distintas preguntas en un mismo test pueden tener distintos \(m_q\).</li>
     </ul>

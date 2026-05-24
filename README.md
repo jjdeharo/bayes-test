@@ -62,6 +62,8 @@ Donde:
 - $a = 1{,}5$ es el parámetro de discriminación (controla la pendiente de la curva)
 - $c_q = \tfrac{1}{m_q}$ es el suelo de acierto por azar ($m_q$ = número de opciones; $c_q = 0{,}25$ para 4 opciones)
 
+> **Invariante de diseño:** el rango de $\theta$ debe ser estrictamente mayor que el rango de $b$. Cuando $\theta_{\max} = b_{\max}$, la curva IRT devuelve exactamente $(1+c_q)/2$ para ese par (punto de inflexión), y la ganancia de información del algoritmo adaptativo se iguala entre tipos de pregunta, impidiendo que las preguntas extremas sean seleccionadas. El sistema calcula automáticamente $\theta = \pm\,2\cdot b_{\max}$ a partir del banco de preguntas para garantizar esta separación.
+
 Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: $P(\text{fallo} \mid H_i, q) = 1 - P(\text{acierto} \mid H_i, q)$.
 
 Los valores resultantes para preguntas de 4 opciones ($c = 0{,}25$, $a = 1{,}5$) son:

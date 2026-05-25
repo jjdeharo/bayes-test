@@ -96,6 +96,15 @@
       transform: translateY(-1px);
       box-shadow: 0 4px 14px rgba(79,70,229,0.4);
     }
+    .hub-link {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: 0.83rem;
+      color: var(--primary);
+      text-decoration: none;
+      opacity: 0.8;
+    }
+    .hub-link:hover { opacity: 1; text-decoration: underline; }
 
     /* WELCOME */
     .welcome-hero { text-align: center; padding: 0.25rem 0 0.75rem; }
@@ -496,37 +505,7 @@
           para elegir dinámicamente la pregunta más informativa en cada momento.
         </p>
         <button class="btn btn-primary" onclick="startQuiz()">▶ Comenzar el test</button>
-      </div>
-
-      <div class="welcome-divider"></div>
-
-      <div class="welcome-resources">
-        <div class="wr-col">
-          <div class="res-label">Para leer</div>
-          <a class="resource-link" href="documentacion.html">
-            <span class="rl-icon">📖</span>
-            <span class="rl-body">
-              <span>Protocolo de evaluación adaptativa bayesiana</span>
-              <span class="rl-desc">Guía completa: fundamentos, matemáticas y diseño pedagógico</span>
-            </span>
-          </a>
-        </div>
-        <div class="wr-col">
-          <div class="res-label">Para replicar con una IA</div>
-          <div class="ai-block">
-            <div class="ai-block-row">
-              <span style="font-size:1rem">🤖</span>
-              <span style="font-size:0.78rem;font-weight:600;color:#4c1d95">Adjunta el documento y copia este prompt:</span>
-            </div>
-            <div class="ai-prompt-wrap">
-              <div class="ai-prompt-text" id="ai-prompt-text">Lee el documento adjunto e implementa el sistema siguiendo las instrucciones que contiene.</div>
-              <button class="ai-copy-btn" id="ai-copy-btn" onclick="copyAiPrompt()">Copiar</button>
-            </div>
-            <a class="ai-dl-btn" href="documentacion_evaluacion_adaptativa_bayesiana.md" download>
-              ⬇ Descargar documento (.md)
-            </a>
-          </div>
-        </div>
+        <a class="hub-link" href="https://jjdeharo.github.io/recursos-adaptativos/">Protocolo y más recursos adaptativos →</a>
       </div>
     </div>
   </div>

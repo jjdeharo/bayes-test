@@ -1,5 +1,106 @@
 # Protocolo para generar sistemas educativos adaptativos bayesianos
 
+## Instrucción de uso
+
+Para generar un recurso educativo adaptativo bayesiano con IA, adjunta este documento a cualquier modelo de IA y usa el siguiente prompt:
+
+> Lee el documento adjunto e implementa el sistema siguiendo las instrucciones que contiene.
+
+El modelo pedirá al docente la información necesaria antes de diseñar nada. Si quieres anticiparla, el docente puede rellenar la siguiente plantilla y adjuntarla junto con el documento:
+
+**Tema:**  
+**Curso o edad:**  
+**Objetivo de aprendizaje:**  
+**Número de niveles o hipótesis:**  
+**Tipo de recurso adaptativo:** evaluación diagnóstica · evaluación formativa · práctica graduada · actividad de refuerzo · actividad de ampliación · itinerario de aprendizaje · tutorial interactivo · simulador · laboratorio virtual · juego educativo · recomendador de recursos · repaso espaciado · otro  
+**Finalidad principal:** detectar nivel de dominio · identificar errores conceptuales · reforzar dificultades · practicar procedimientos · consolidar contenidos · ampliar conocimientos · guiar un itinerario · ofrecer pistas graduadas · personalizar explicaciones · recomendar recursos · preparar una evaluación · repasar contenidos anteriores  
+**Qué debe adaptar el sistema:** la siguiente pregunta · la dificultad · el tipo de actividad · la explicación · la cantidad de ayuda · las pistas · el ritmo · el itinerario · el recurso recomendado · el nivel de reto · el momento de finalizar  
+**Tipo de respuesta o interacción del alumno:** opción múltiple · verdadero/falso · selección múltiple · emparejamiento · ordenación · respuesta numérica · respuesta breve exacta · elección de ruta · manipulación de variables · interacción con simulador · selección de pistas · resolución paso a paso  
+**Tipo de salida esperada:** diagnóstico pedagógico · recomendación de refuerzo · recomendación de ampliación · informe de progreso · explicación personalizada · ruta de aprendizaje · secuencia de práctica · resumen de errores frecuentes · propuesta de siguiente actividad  
+**Tipos de preguntas o interacciones permitidas:**  
+**Número aproximado de preguntas o pasos:**  
+**Duración máxima:**  
+**Formato deseado:**  
+**Grado de precisión deseado:**  
+**Observaciones sobre el alumnado:**  
+
+Las instrucciones técnicas y pedagógicas completas que el modelo leerá e implementará son las siguientes:
+
+> Actúa como diseñador e implementador de sistemas educativos adaptativos bayesianos. Tu tarea es crear un recurso educativo adaptativo como página web estática (HTML + CSS + JavaScript en un único archivo autocontenido), siguiendo exactamente las especificaciones técnicas y pedagógicas de este documento.
+>
+> **0. Lo primero que debes hacer.**
+> Antes de implementar nada, pregunta al docente lo siguiente. No resumas el documento. No preguntes sobre lenguajes ni entornos: el resultado será siempre una página web estática en un único archivo HTML. Haz estas preguntas y espera las respuestas antes de escribir ningún código:
+>
+> — ¿Sobre qué tema o unidad didáctica quieres el recurso?
+> — ¿A qué curso o edad va dirigido?
+> — ¿Cuál es el objetivo de aprendizaje?
+> — ¿Qué tipo de recurso quieres? (evaluación diagnóstica, práctica graduada, actividad de refuerzo, actividad de ampliación, itinerario de aprendizaje, tutorial, simulador, juego educativo, repaso espaciado u otro)
+> — ¿Cuál es la finalidad principal? (detectar nivel, identificar errores, reforzar, practicar, consolidar, ampliar, guiar un itinerario, ofrecer pistas, personalizar explicaciones, recomendar recursos, repasar…)
+> — ¿Cuántos niveles o hipótesis quieres? (por defecto: 3 niveles — básico, medio, avanzado)
+> — ¿Qué tipo de interacción tendrá el alumno? (opción múltiple, verdadero/falso, emparejamiento, ordenación, respuesta numérica, respuesta breve…)
+> — ¿Cuántas preguntas o pasos aproximadamente?
+> — ¿Qué resultado o salida debe ver el alumno al final? (diagnóstico, informe de progreso, recomendación, ruta de aprendizaje, propuesta de siguiente actividad…)
+> — ¿Alguna observación sobre el alumnado o el contexto?
+>
+> Solo cuando tengas estas respuestas, diseña e implementa el recurso completo como página web estática.
+>
+> **1. Estado del alumno.**
+> Representa el estado del alumno como un vector de probabilidades P(H_i) sobre n hipótesis de aprendizaje (niveles de dominio, errores conceptuales, lagunas, necesidades de refuerzo u otras hipótesis pedagógicas pertinentes). Inicializa con distribución uniforme P(H_i) = 1/n si no hay información previa. Asigna a cada hipótesis un valor numérico θ_i que refleje su posición relativa en la escala de dominio.
+>
+> **2. Actualización bayesiana.**
+> Tras cada respuesta R del alumno, actualiza la distribución mediante:
+> P(H_i | R) = P(R | H_i) · P(H_i) / Σ_j [P(R | H_j) · P(H_j)]
+> Normaliza siempre dividiendo por la suma. Repite tras cada respuesta.
+>
+> **3. Verosimilitudes por pregunta.**
+> Calcula P(acierto | H_i, q) dinámicamente para cada pregunta q usando la función logística IRT 3PL:
+> P(acierto | H_i, q) = c_q + (1 − c_q) · 1 / (1 + exp(−a · (θ_i − b_q)))
+> donde:
+> — θ_i es el valor numérico de la hipótesis H_i;
+> — b_q es la dificultad de la pregunta (en la misma escala que θ_i);
+> — a es el parámetro de discriminación; usa 1.5 por defecto salvo indicación contraria;
+> — c_q = 1/m_q es la probabilidad mínima de acierto por azar, siendo m_q el número de opciones de la pregunta (0 si no hay azar).
+> P(fallo | H_i, q) = 1 − P(acierto | H_i, q).
+> No uses tablas fijas de verosimilitudes. Cada pregunta genera las suyas a partir de sus parámetros.
+>
+> **4. Selección de la siguiente pregunta.**
+> Para cada pregunta disponible q, calcula la ganancia esperada de información:
+> P(A) = Σ_i P(H_i) · P(acierto | H_i, q)
+> P(F) = 1 − P(A)
+> P(H_i | acierto) = P(acierto | H_i, q) · P(H_i) / P(A)
+> P(H_i | fallo) = P(fallo | H_i, q) · P(H_i) / P(F)
+> IG(q) = H_actual − [P(A) · H(posterior_acierto) + P(F) · H(posterior_fallo)]
+> donde H = −Σ p_i · log2(p_i) es la entropía de Shannon.
+> Selecciona la pregunta con mayor IG. Entre candidatas con IG prácticamente igual, elige al azar con peso inversamente proporcional al número de veces que su categoría o concepto ha aparecido (diversidad de contenidos). No uses selección determinista entre empates: produce test repetitivos.
+>
+> **5. Criterio de parada.**
+> Detén el test cuando la entropía H caiga por debajo del umbral:
+> H_stop = −p_min · log2(p_min) − (1 − p_min) · log2((1 − p_min) / (n − 1))
+> donde p_min es el nivel de confianza deseado (0.80 es un valor habitual) y n es el número de hipótesis. Este umbral aproxima la situación en la que la hipótesis más probable supera p_min, suponiendo que la probabilidad restante se reparte de forma uniforme entre las demás hipótesis. En la práctica, conviene comprobar ambos criterios de forma complementaria: que la entropía esté por debajo de H_stop y que la hipótesis más probable supere p_min. Impón también un límite máximo de preguntas y detén el test si no quedan preguntas útiles disponibles. Respeta siempre un mínimo de preguntas antes de poder finalizar.
+>
+> **6. Recuperación automática.**
+> Si se usa actualización bayesiana y selección por máxima ganancia esperada de información, la recuperación queda en gran parte integrada en el mecanismo adaptativo: el sistema favorece automáticamente preguntas más informativas a medida que el posterior cambia. Aun así, el sistema debe evitar bloqueos prácticos mediante un límite máximo de preguntas, variedad suficiente de preguntas por nivel, y la posibilidad de revisar hipótesis si aparecen evidencias contrarias. La recuperación completa no está garantizada si las preguntas están mal calibradas, si hay pocas disponibles en algún nivel, o si el alumno responde al azar.
+>
+> **7. Preguntas.**
+> Usa solo preguntas autocorregibles (opción múltiple, verdadero/falso, numérica con tolerancia, respuesta breve exacta, emparejamiento, ordenación). No incluyas preguntas abiertas largas si no existe corrección automática fiable. Asigna a cada pregunta: texto, dificultad b_q (valor numérico centrado en cero), número de opciones m_q, y categoría o concepto evaluado. Cuando el docente exprese la dificultad de forma cualitativa, conviértela a valores numéricos centrados en cero con intervalos iguales: 2 categorías → (−0.5, 0.5); 3 → (−1, 0, 1); 4 → (−1.5, −0.5, 0.5, 1.5); 5 → (−2, −1, 0, 1, 2). Para los valores θ_i de los niveles o hipótesis jerárquicas, usa la misma convención de centrado e intervalos iguales, pero con un rango el doble de amplio: θ_max = 2 · b_max. Esto es obligatorio: si θ_max = b_max, el nivel extremo y la dificultad extrema coinciden en el punto de inflexión logístico y el sistema nunca selecciona las preguntas de ese extremo. La forma más robusta es calcular θ_max automáticamente como 2 · max|b_q| a partir del banco de preguntas. Si las hipótesis no son jerárquicas (por ejemplo, distintos errores conceptuales), no uses la función logística: define las verosimilitudes directamente según la relación diagnóstica entre cada pregunta y cada hipótesis.
+>
+> **8. Resultado final.**
+> Presenta una interpretación pedagógica: qué domina el alumno, qué dificultades muestra, qué lagunas conviene revisar, qué se recomienda como siguiente paso. Muestra el nivel de confianza de la estimación (probabilidad de la hipótesis más probable). Si la entropía final supera H_stop, indica explícitamente que el diagnóstico es provisional. No te limites a mostrar una puntuación o etiqueta.
+>
+> **9. Adaptación al contexto.**
+> Usa las respuestas del docente obtenidas en el paso 0 para adaptar todos los parámetros: θ_i, b_q, n, p_min, número mínimo y máximo de preguntas o pasos, tipo de interacción y tipo de salida. Si el docente no especifica algún parámetro, usa valores razonables por defecto y explícalos brevemente antes de implementar.
+>
+> **10. Tipo de recurso.**
+> El sistema no debe limitarse a crear recursos de evaluación. Puede generar cualquier tipo de recurso educativo adaptativo según la finalidad indicada por el docente: itinerarios de aprendizaje personalizados, explicaciones adaptativas, práctica graduada, actividades de refuerzo o ampliación, tutoriales interactivos, simuladores con ayudas adaptativas, laboratorios virtuales guiados, sistemas de pistas graduadas, retroalimentación personalizada, juegos educativos adaptativos, recomendadores de recursos o actividades de repaso espaciado.
+>
+> En todos los casos, la adaptación debe responder a la situación del alumno. Si el alumno muestra dominio, el sistema puede avanzar, ampliar o aumentar la complejidad. Si muestra dificultades, puede ofrecer ayuda, explicación, práctica guiada o refuerzo. Si aparecen errores concretos, puede proponer actividades dirigidas a corregirlos.
+>
+> La finalidad de la adaptación no tiene por qué ser solo estimar un nivel. También puede ser decidir qué explicación mostrar, qué pista ofrecer, qué ejercicio proponer, qué recurso recomendar, qué itinerario seguir o cuándo pasar de refuerzo a ampliación.
+>
+> Cuando el recurso no sea una evaluación, el sistema debe seguir usando la información obtenida durante la interacción para adaptar la experiencia. Puede mantener hipótesis sobre el estado del alumno, actualizar esas hipótesis con sus respuestas o acciones, medir la incertidumbre cuando sea útil y tomar decisiones pedagógicas en función de esa estimación.
+>
+> El resultado final debe ajustarse al tipo de recurso: en una evaluación, ofrece un diagnóstico; en una actividad de aprendizaje, indica el recorrido seguido y las ayudas usadas; en una práctica adaptativa, muestra progreso y recomendaciones; en un recurso de refuerzo o ampliación, explica qué contenidos se han trabajado y cuál sería el siguiente paso.
+
 ## 1. Finalidad del protocolo
 
 Este documento sirve como guía para crear aplicaciones, actividades o cuestionarios educativos adaptativos basados en inferencia bayesiana y entropía de Shannon.
@@ -503,19 +604,7 @@ El sistema debe adaptar sus decisiones a ese contexto.
 
 ## 20. Plantilla para el docente
 
-El docente puede proporcionar la información inicial mediante una plantilla como esta:
-
-**Tema:**  
-**Curso o edad:**  
-**Objetivo de aprendizaje:**  
-**Número de niveles o hipótesis:**  
-**Tipos de preguntas permitidas:**  
-**Número aproximado de preguntas:**  
-**Duración máxima:**  
-**Finalidad:**  
-**Formato deseado:**  
-**Grado de precisión deseado:**  
-**Observaciones sobre el alumnado:**  
+La plantilla para que el docente proporcione la información inicial figura en la sección **Instrucción de uso**, al inicio del documento.
 
 ## 21. Reglas de diseño para la IA
 
@@ -539,73 +628,7 @@ Al generar una aplicación o actividad basada en este protocolo, la IA debe segu
 
 ## 22. Instrucción maestra portable
 
-La siguiente instrucción puede usarse como prompt universal en distintos modelos de IA. Incluye las especificaciones técnicas necesarias para que el sistema se implemente correctamente.
-
----
-
-> Actúa como diseñador e implementador de sistemas educativos adaptativos bayesianos. Tu tarea es crear un recurso educativo adaptativo como página web estática (HTML + CSS + JavaScript en un único archivo autocontenido), siguiendo exactamente las especificaciones técnicas y pedagógicas de este documento.
->
-> **0. Lo primero que debes hacer.**
-> Antes de implementar nada, pregunta al docente lo siguiente. No resumas el documento. No preguntes sobre lenguajes ni entornos: el resultado será siempre una página web estática en un único archivo HTML. Haz estas preguntas y espera las respuestas antes de escribir ningún código:
->
-> — ¿Sobre qué tema o unidad didáctica quieres el recurso?
-> — ¿A qué curso o edad va dirigido?
-> — ¿Cuál es el objetivo de aprendizaje?
-> — ¿Qué tipo de recurso quieres? (evaluación diagnóstica, práctica graduada, actividad de refuerzo, actividad de ampliación, itinerario de aprendizaje, tutorial, simulador, juego educativo, repaso espaciado u otro)
-> — ¿Cuál es la finalidad principal? (detectar nivel, identificar errores, reforzar, practicar, consolidar, ampliar, guiar un itinerario, ofrecer pistas, personalizar explicaciones, recomendar recursos, repasar…)
-> — ¿Cuántos niveles o hipótesis quieres? (por defecto: 3 niveles — básico, medio, avanzado)
-> — ¿Qué tipo de interacción tendrá el alumno? (opción múltiple, verdadero/falso, emparejamiento, ordenación, respuesta numérica, respuesta breve…)
-> — ¿Cuántas preguntas o pasos aproximadamente?
-> — ¿Qué resultado o salida debe ver el alumno al final? (diagnóstico, informe de progreso, recomendación, ruta de aprendizaje, propuesta de siguiente actividad…)
-> — ¿Alguna observación sobre el alumnado o el contexto?
->
-> Solo cuando tengas estas respuestas, diseña e implementa el recurso completo como página web estática.
->
-> **1. Estado del alumno.**
-> Representa el estado del alumno como un vector de probabilidades P(H_i) sobre n hipótesis de aprendizaje (niveles de dominio, errores conceptuales, lagunas, necesidades de refuerzo u otras hipótesis pedagógicas pertinentes). Inicializa con distribución uniforme P(H_i) = 1/n si no hay información previa. Asigna a cada hipótesis un valor numérico θ_i que refleje su posición relativa en la escala de dominio.
->
-> **2. Actualización bayesiana.**
-> Tras cada respuesta R del alumno, actualiza la distribución mediante:
-> P(H_i | R) = P(R | H_i) · P(H_i) / Σ_j [P(R | H_j) · P(H_j)]
-> Normaliza siempre dividiendo por la suma. Repite tras cada respuesta.
->
-> **3. Verosimilitudes por pregunta.**
-> Calcula P(acierto | H_i, q) dinámicamente para cada pregunta q usando la función logística IRT 3PL:
-> P(acierto | H_i, q) = c_q + (1 − c_q) · 1 / (1 + exp(−a · (θ_i − b_q)))
-> donde:
-> — θ_i es el valor numérico de la hipótesis H_i;
-> — b_q es la dificultad de la pregunta (en la misma escala que θ_i);
-> — a es el parámetro de discriminación; usa 1.5 por defecto salvo indicación contraria;
-> — c_q = 1/m_q es la probabilidad mínima de acierto por azar, siendo m_q el número de opciones de la pregunta (0 si no hay azar).
-> P(fallo | H_i, q) = 1 − P(acierto | H_i, q).
-> No uses tablas fijas de verosimilitudes. Cada pregunta genera las suyas a partir de sus parámetros.
->
-> **4. Selección de la siguiente pregunta.**
-> Para cada pregunta disponible q, calcula la ganancia esperada de información:
-> P(A) = Σ_i P(H_i) · P(acierto | H_i, q)
-> P(F) = 1 − P(A)
-> P(H_i | acierto) = P(acierto | H_i, q) · P(H_i) / P(A)
-> P(H_i | fallo) = P(fallo | H_i, q) · P(H_i) / P(F)
-> IG(q) = H_actual − [P(A) · H(posterior_acierto) + P(F) · H(posterior_fallo)]
-> donde H = −Σ p_i · log2(p_i) es la entropía de Shannon.
-> Selecciona la pregunta con mayor IG. Entre candidatas con IG prácticamente igual, elige al azar con peso inversamente proporcional al número de veces que su categoría o concepto ha aparecido (diversidad de contenidos). No uses selección determinista entre empates: produce test repetitivos.
->
-> **5. Criterio de parada.**
-> Detén el test cuando la entropía H caiga por debajo del umbral:
-> H_stop = −p_min · log2(p_min) − (1 − p_min) · log2((1 − p_min) / (n − 1))
-> donde p_min es el nivel de confianza deseado (0.80 es un valor habitual) y n es el número de hipótesis. Este umbral aproxima la situación en la que la hipótesis más probable supera p_min, suponiendo que la probabilidad restante se reparte de forma uniforme entre las demás hipótesis. En la práctica, conviene comprobar ambos criterios de forma complementaria: que la entropía esté por debajo de H_stop y que la hipótesis más probable supere p_min. Impón también un límite máximo de preguntas y detén el test si no quedan preguntas útiles disponibles. Respeta siempre un mínimo de preguntas antes de poder finalizar.
->
-> **6. Recuperación automática.**
-> Si se usa actualización bayesiana y selección por máxima ganancia esperada de información, la recuperación queda en gran parte integrada en el mecanismo adaptativo: el sistema favorece automáticamente preguntas más informativas a medida que el posterior cambia. Aun así, el sistema debe evitar bloqueos prácticos mediante un límite máximo de preguntas, variedad suficiente de preguntas por nivel, y la posibilidad de revisar hipótesis si aparecen evidencias contrarias. La recuperación completa no está garantizada si las preguntas están mal calibradas, si hay pocas disponibles en algún nivel, o si el alumno responde al azar.
->
-> **7. Preguntas.**
-> Usa solo preguntas autocorregibles (opción múltiple, verdadero/falso, numérica con tolerancia, respuesta breve exacta, emparejamiento, ordenación). No incluyas preguntas abiertas largas si no existe corrección automática fiable. Asigna a cada pregunta: texto, dificultad b_q (valor numérico centrado en cero), número de opciones m_q, y categoría o concepto evaluado. Cuando el docente exprese la dificultad de forma cualitativa, conviértela a valores numéricos centrados en cero con intervalos iguales: 2 categorías → (−0.5, 0.5); 3 → (−1, 0, 1); 4 → (−1.5, −0.5, 0.5, 1.5); 5 → (−2, −1, 0, 1, 2). Para los valores θ_i de los niveles o hipótesis jerárquicas, usa la misma convención de centrado e intervalos iguales, pero con un rango el doble de amplio: θ_max = 2 · b_max. Esto es obligatorio: si θ_max = b_max, el nivel extremo y la dificultad extrema coinciden en el punto de inflexión logístico y el sistema nunca selecciona las preguntas de ese extremo. La forma más robusta es calcular θ_max automáticamente como 2 · max|b_q| a partir del banco de preguntas. Si las hipótesis no son jerárquicas (por ejemplo, distintos errores conceptuales), no uses la función logística: define las verosimilitudes directamente según la relación diagnóstica entre cada pregunta y cada hipótesis.
->
-> **8. Resultado final.**
-> Presenta una interpretación pedagógica: qué domina el alumno, qué dificultades muestra, qué lagunas conviene revisar, qué se recomienda como siguiente paso. Muestra el nivel de confianza de la estimación (probabilidad de la hipótesis más probable). Si la entropía final supera H_stop, indica explícitamente que el diagnóstico es provisional. No te limites a mostrar una puntuación o etiqueta.
->
-> **9. Adaptación al contexto.**
-> Usa las respuestas del docente obtenidas en el paso 0 para adaptar todos los parámetros: θ_i, b_q, n, p_min, número mínimo y máximo de preguntas o pasos, tipo de interacción y tipo de salida. Si el docente no especifica algún parámetro, usa valores razonables por defecto y explícalos brevemente antes de implementar.
+La instrucción maestra completa, junto con la plantilla para el docente, figura en la sección **Instrucción de uso**, al inicio del documento.
 
 ## 23. Alcance y límites
 

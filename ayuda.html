@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cómo funciona · Test Adaptativo Bayesiano</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+:root{
+  --pri:#4f46e5;--pri-l:#818cf8;--pri-bg:#eff0ff;
+  --ok:#22c55e;--ok-bg:#f0fdf4;
+  --warn-bg:#fffbeb;--warn-b:#fde68a;--warn-t:#92400e;
+  --bg:#f1f5f9;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 20px 0}
+.wrap{max-width:720px;margin:0 auto;padding-bottom:60px}
+h1{font-size:1.5rem;color:var(--pri);font-weight:700;text-align:center;margin-bottom:6px}
+.sub{text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:10px}
+h2{font-size:1.1rem;font-weight:700;color:var(--pri);margin:0 0 12px;display:flex;align-items:center;gap:8px}
+h3{font-size:.95rem;font-weight:700;color:var(--text);margin:16px 0 8px}
+p{font-size:.92rem;line-height:1.75;margin-bottom:10px;color:var(--text)}
+ul,ol{padding-left:20px;font-size:.9rem;line-height:1.9;color:var(--text);margin-bottom:10px}
+li{margin-bottom:2px}
+.card{background:var(--card);border-radius:16px;padding:22px 26px;box-shadow:0 1px 4px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.04);margin-bottom:16px}
+.tag{display:inline-block;background:var(--pri-bg);color:var(--pri);font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;margin-right:6px;margin-bottom:4px}
+.tag-easy  {background:#fef9c3;color:#854d0e}
+.tag-medium{background:#dbeafe;color:#1e40af}
+.tag-hard  {background:#fce7f3;color:#9d174d}
+
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-align:center;margin:28px 0 14px;display:flex;align-items:center;gap:12px}
+.section-label::before,.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.level-row{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}
+.lv{flex:1;min-width:150px;border-radius:12px;padding:14px;font-size:.85rem;line-height:1.6}
+.lv.l0{background:#fef9c3;color:#854d0e}
+.lv.l1{background:#dbeafe;color:#1e40af}
+.lv.l2{background:#ede9fe;color:#5b21b6}
+.lv strong{display:block;font-size:1rem;margin-bottom:4px}
+
+.flow{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.flow-step{display:flex;gap:12px;align-items:flex-start;font-size:.9rem;line-height:1.6}
+.flow-num{width:26px;height:26px;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;margin-top:2px}
+
+.formula-box{background:#f8faff;border:2px solid #e0e7ff;border-radius:10px;padding:14px 18px;margin:12px 0;overflow-x:auto;text-align:center}
+.formula-box .katex-display{margin:0}
+.formula-box .katex{font-size:1.05rem}
+
+.param-list{list-style:none;padding:0;display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.param-list li{display:flex;gap:10px;font-size:.88rem;align-items:baseline}
+.param-key{font-weight:700;color:var(--pri);min-width:36px;flex-shrink:0}
+
+table{width:100%;border-collapse:collapse;font-size:.87rem;margin:10px 0}
+th{background:var(--pri-bg);color:var(--pri);font-weight:700;padding:8px 12px;text-align:left}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+
+.note{background:var(--warn-bg);border:1px solid var(--warn-b);border-radius:10px;padding:11px 15px;font-size:.85rem;color:var(--warn-t);margin:12px 0}
+.note-ok{background:var(--ok-bg);border:1px solid #bbf7d0;border-radius:10px;padding:11px 15px;font-size:.85rem;color:#166534;margin:12px 0}
+
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--pri);color:#fff;text-decoration:none;padding:10px 20px;border-radius:10px;font-size:.9rem;font-weight:600;margin-bottom:24px;transition:opacity .2s}
+.back-btn:hover{opacity:.88}
+
+.stop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.stop-cell{border-radius:10px;padding:14px;font-size:.85rem;line-height:1.6}
+.stop-cell.s-certain{background:#f0fdf4;border:1px solid #bbf7d0}
+.stop-cell.s-gain{background:#eff6ff;border:1px solid #bfdbfe}
+.stop-cell.s-max{background:#fef9c3;border:1px solid #fde68a}
+.stop-cell strong{display:block;margin-bottom:4px;font-size:.9rem}
+
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.cat-chip{background:#f1f5f9;border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:.8rem;color:var(--muted)}
+
+.site-footer{color:var(--muted);font-size:.75rem;padding:.9rem 0 1.4rem;text-align:center;border-top:1px solid var(--border);margin-top:28px}
+.site-footer a{color:var(--muted);text-decoration:none}
+.site-footer a:hover{color:var(--pri)}
+.site-footer .sep{margin:0 .5rem;opacity:.35}
+
+@media(max-width:480px){
+  body{padding:14px 14px 0}
+  .card{padding:16px 18px}
+  .level-row{flex-direction:column}
+  .stop-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-btn" href="index.html">← Volver al test</a>
+
+  <h1>📊 Cómo funciona el test</h1>
+  <p class="sub">Sistema Adaptativo Bayesiano · Cultura General</p>
+
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section-label">Guía para el alumno</div>
+  <!-- ══════════════════════════════════════════ -->
+
+  <div class="card">
+    <h2>📖 ¿Qué es este test?</h2>
+    <p>Es una <strong>demo de evaluación adaptativa bayesiana</strong> sobre cultura general. A diferencia de un test fijo, este sistema <strong>observa tus respuestas</strong> y ajusta la siguiente pregunta en tiempo real para obtener el máximo de información con el menor número de preguntas posible.</p>
+    <p>No hay tiempo límite. Los errores no penalizan: son evidencias que el sistema usa para afinar la estimación de tu nivel.</p>
+  </div>
+
+  <div class="card">
+    <h2>🏅 Los tres niveles</h2>
+    <p>El sistema mantiene en todo momento una estimación probabilística sobre cuál de estos tres niveles refleja mejor tu conocimiento:</p>
+    <div class="level-row">
+      <div class="lv l0"><strong>🟡 Básico</strong>Dominio de contenidos fundamentales y preguntas de dificultad baja.</div>
+      <div class="lv l1"><strong>🔵 Medio</strong>Solvencia en preguntas de dificultad media, con algunas dificultades en las más exigentes.</div>
+      <div class="lv l2"><strong>🟣 Avanzado</strong>Dominio consolidado: aciertos consistentes en preguntas difíciles de distintas categorías.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔄 ¿Qué ocurre durante el test?</h2>
+    <div class="flow">
+      <div class="flow-step"><div class="flow-num">1</div><div><strong>Arranque</strong> — El sistema parte sin información previa: los tres niveles tienen un 33&thinsp;% de probabilidad inicial.</div></div>
+      <div class="flow-step"><div class="flow-num">2</div><div><strong>Pregunta adaptativa</strong> — Cada pregunta se elige para maximizar la <em>ganancia esperada de información</em> sobre tu nivel, teniendo en cuenta también la variedad de categorías ya evaluadas.</div></div>
+      <div class="flow-step"><div class="flow-num">3</div><div><strong>Actualización bayesiana</strong> — Tras tu respuesta, el sistema recalcula las probabilidades de cada nivel aplicando el teorema de Bayes. Verás cómo cambian las barras en tiempo real.</div></div>
+      <div class="flow-step"><div class="flow-num">4</div><div><strong>Parada automática</strong> — Cuando el sistema tiene suficiente certeza (o se agota el banco de preguntas útiles), el test termina y recibes tu informe.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📚 El banco de preguntas</h2>
+    <p>El test dispone de <strong>90 preguntas</strong> de opción múltiple (4 opciones), distribuidas en tres niveles de dificultad y ocho categorías temáticas:</p>
+    <table>
+      <tr><th>Dificultad</th><th>Preguntas</th><th>Parámetro b</th></tr>
+      <tr><td><span class="tag tag-easy">Fácil</span></td><td>30</td><td id="b0"></td></tr>
+      <tr><td><span class="tag tag-medium">Media</span></td><td>30</td><td id="b1"></td></tr>
+      <tr><td><span class="tag tag-hard">Difícil</span></td><td>30</td><td id="b2"></td></tr>
+    </table>
+    <p style="margin-top:8px">Categorías evaluadas:</p>
+    <div class="cat-chips">
+      <span class="cat-chip">Ciencia</span>
+      <span class="cat-chip">Historia</span>
+      <span class="cat-chip">Geografía</span>
+      <span class="cat-chip">Literatura</span>
+      <span class="cat-chip">Arte</span>
+      <span class="cat-chip">Matemáticas</span>
+      <span class="cat-chip">Deportes</span>
+      <span class="cat-chip">Filosofía</span>
+    </div>
+    <div class="note">Cada sesión baraja las preguntas disponibles, así que nunca verás exactamente la misma secuencia dos veces.</div>
+  </div>
+
+  <div class="card">
+    <h2>📊 Informe final</h2>
+    <p>Al terminar el test recibes un informe personalizado con:</p>
+    <ul>
+      <li>Tu <strong>nivel estimado</strong> (Básico, Medio o Avanzado) y el porcentaje de confianza del sistema.</li>
+      <li>La <strong>distribución final de probabilidades</strong> sobre los tres niveles.</li>
+      <li>Resultados por dificultad: cuántas preguntas fáciles, medias y difíciles acertaste.</li>
+      <li>Categorías con más errores y recomendaciones concretas.</li>
+      <li>El historial completo de preguntas con el nivel estimado tras cada respuesta.</li>
+      <li>Una explicación de <em>cómo adaptó el sistema las preguntas</em> durante la sesión.</li>
+    </ul>
+    <div class="note">Si el test termina sin converger, el informe indica «Estimación provisional» y explica el motivo.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section-label">Fundamentos técnicos y matemáticos</div>
+  <!-- ══════════════════════════════════════════ -->
+
+  <div class="card">
+    <h2>🧠 Motor bayesiano: estimación del nivel</h2>
+    <p>El sistema mantiene una <strong>distribución de probabilidad</strong> sobre los tres niveles:</p>
+    <table>
+      <tr><th>Nivel</th><th>Habilidad θ</th><th>Interpretación</th></tr>
+      <tr><td><em>Básico</em></td><td id="t0"></td><td>Conocimiento de contenidos básicos</td></tr>
+      <tr><td><em>Medio</em></td><td id="t1"></td><td>Dominio intermedio</td></tr>
+      <tr><td><em>Avanzado</em></td><td id="t2"></td><td>Dominio consolidado</td></tr>
+    </table>
+    <p style="margin-top:12px">Tras cada respuesta, las probabilidades se actualizan con el <strong>teorema de Bayes</strong>:</p>
+    <div class="formula-box" id="f-bayes"></div>
+    <p>La verosimilitud de cada respuesta se calcula con el <strong>modelo logístico IRT de 3 parámetros (3PL)</strong>:</p>
+    <div class="formula-box" id="f-irt"></div>
+    <ul class="param-list">
+      <li><span class="param-key" id="pk-theta"></span>habilidad asociada al nivel i</li>
+      <li><span class="param-key" id="pk-bq"></span>dificultad de la pregunta: −1 (fácil), 0 (media), +1 (difícil)</li>
+      <li><span class="param-key" id="pk-a"></span>discriminación — pendiente de la curva logística (a = 1,5)</li>
+      <li><span class="param-key" id="pk-c"></span>probabilidad mínima de acierto por azar: 0,25 (4 opciones)</li>
+    </ul>
+    <p>Los valores de θ se calculan automáticamente como el doble del rango de dificultades del banco, para que ninguna dificultad coincida con un nivel extremo en el punto de inflexión logístico.</p>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Selección adaptativa de preguntas</h2>
+    <p>El sistema elige cada pregunta maximizando la <strong>ganancia esperada de información</strong>: la reducción esperada de entropía tras conocer la respuesta.</p>
+    <div class="formula-box" id="f-ig"></div>
+    <p>donde <em>H</em> es la <strong>entropía de Shannon</strong>, que mide la incertidumbre actual:</p>
+    <div class="formula-box" id="f-entropy"></div>
+    <p>Cuando varias preguntas tienen la misma ganancia, se aplica una <strong>selección aleatoria ponderada</strong> que favorece las categorías menos frecuentes en la sesión:</p>
+    <div class="formula-box" id="f-div"></div>
+    <p>Esto garantiza diversidad temática sin sacrificar utilidad informativa.</p>
+  </div>
+
+  <div class="card">
+    <h2>🛑 Condiciones de parada</h2>
+    <p>El test se detiene cuando se cumple <strong>cualquiera</strong> de estas tres condiciones:</p>
+    <div class="stop-grid">
+      <div class="stop-cell s-certain">
+        <strong>✅ Convergencia bayesiana</strong>
+        Tras al menos 6 preguntas, la entropía cae por debajo de H<sub>stop</sub> <em>y</em> el nivel más probable supera el 80&thinsp;% de confianza. El diagnóstico es firme.
+      </div>
+      <div class="stop-cell s-gain">
+        <strong>📉 Ganancia mínima</strong>
+        Tras al menos 12 preguntas, la mejor pregunta disponible aporta menos de 0,015 bits de información esperada. Continuar alargaría el test sin mejorar el diagnóstico.
+      </div>
+      <div class="stop-cell s-max">
+        <strong>⚠ Máximo de preguntas</strong>
+        Se alcanza el máximo calculado por minimax (nunca más de 20). El sistema devuelve una estimación provisional.
+      </div>
+    </div>
+    <p style="margin-top:12px">El umbral de entropía H<sub>stop</sub> se deriva de una confianza mínima p<sub>min</sub> = 0,80:</p>
+    <div class="formula-box" id="f-hstop"></div>
+    <p>Con n = 3 niveles y p<sub>min</sub> = 0,80, este umbral vale aproximadamente <strong id="hstop-val"></strong> bits (frente a la entropía máxima de <strong id="h0-val"></strong> bits con distribución uniforme).</p>
+    <div class="note-ok">💡 El número máximo real de preguntas se calcula al inicio mediante un análisis <strong>minimax</strong> sobre todos los caminos posibles del banco: garantiza que el valor mostrado en pantalla es siempre alcanzable en el peor caso.</div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 Interpretación de los resultados</h2>
+    <p>El informe final distingue dos situaciones:</p>
+    <ul>
+      <li><strong>Diagnóstico firme</strong> — la entropía final está por debajo de H<sub>stop</sub> y el nivel más probable supera el 80&thinsp;%. La estimación es confiable.</li>
+      <li><strong>Diagnóstico provisional</strong> — el test terminó por ganancia baja o por límite máximo antes de converger. La estimación puede revisarse con más preguntas o un banco mejor calibrado.</li>
+    </ul>
+    <p>La interpretación pedagógica analiza los resultados por dificultad y por categoría, identifica las áreas con más errores y ofrece una recomendación concreta de siguiente paso.</p>
+  </div>
+
+  <div class="card">
+    <h2>📐 Para saber más</h2>
+    <p>Los fundamentos matemáticos completos —teorema de Bayes, modelo IRT 3PL, entropía de Shannon, ganancia de información y ejemplo numérico paso a paso— están disponibles en:</p>
+    <ul>
+      <li><a href="https://jjdeharo.github.io/recursos-adaptativos/matematicas.html" target="_blank" rel="noopener">Explicación matemática detallada →</a></li>
+      <li><a href="https://jjdeharo.github.io/recursos-adaptativos/documentacion.html" target="_blank" rel="noopener">Protocolo para crear tus propios recursos adaptativos →</a></li>
+    </ul>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  © <a href="https://bilateria.org" target="_blank" rel="noopener">Juan José de Haro</a>
+  <span class="sep">·</span>
+  Contenido: <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
+  <span class="sep">·</span>
+  Código: <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL-3.0</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="questions.js"></script>
+<script>
+const rd = (id, latex) =>
+  document.getElementById(id).innerHTML =
+    katex.renderToString(latex, { displayMode: true, throwOnError: false });
+const ri = (id, latex) =>
+  document.getElementById(id).innerHTML =
+    katex.renderToString(latex, { displayMode: false, throwOnError: false });
+
+// ── parámetros reales del motor ──────────────────────────────────────────────
+const B_MAX      = Math.max(...QUESTIONS.map(q => Math.abs(q.dificultad)));
+const THETA_MAX  = B_MAX * 2;
+const H_STOP_VAL = -(0.80 * Math.log2(0.80)) - (0.20 * Math.log2(0.20 / 2));
+const H0_VAL     = Math.log2(3);
+
+document.getElementById('hstop-val').textContent = H_STOP_VAL.toFixed(2);
+document.getElementById('h0-val').textContent    = H0_VAL.toFixed(2);
+
+// ── fórmulas ─────────────────────────────────────────────────────────────────
+rd('f-bayes',
+  'P(H_i \\mid r) = \\dfrac{P(r \\mid H_i)\\cdot P(H_i)}{\\displaystyle\\sum_j P(r \\mid H_j)\\cdot P(H_j)}');
+
+rd('f-irt',
+  'P(\\text{acierto} \\mid H_i,\\,q) = c_q + \\dfrac{1-c_q}{1+e^{-a(\\theta_i - b_q)}}');
+
+rd('f-ig',
+  'IG(q) = H(\\mathbf{p}) - \\bigl[P(A)\\cdot H(\\mathbf{p}_{\\!A}) + P(F)\\cdot H(\\mathbf{p}_{\\!F})\\bigr]');
+
+rd('f-entropy', 'H(\\mathbf{p}) = -\\sum_i p_i \\log_2 p_i');
+
+rd('f-div',
+  '\\text{peso}(q) = \\dfrac{1}{1 + n_{\\text{cat}(q)}}');
+
+rd('f-hstop',
+  'H_{\\text{stop}} = -p_{\\min}\\log_2 p_{\\min} - (1-p_{\\min})\\log_2\\!\\left(\\dfrac{1-p_{\\min}}{n-1}\\right)');
+
+// ── valores θ y b reales ─────────────────────────────────────────────────────
+ri('t0', `\\theta = ${-THETA_MAX}`);
+ri('t1', '\\theta = 0');
+ri('t2', `\\theta = +${THETA_MAX}`);
+ri('pk-theta', '\\theta_i');
+ri('pk-bq', 'b_q');
+ri('pk-a', 'a');
+ri('pk-c', 'c_q');
+ri('b0', 'b = -1');
+ri('b1', 'b = 0');
+ri('b2', 'b = +1');
+</script>
+</body>
+</html>

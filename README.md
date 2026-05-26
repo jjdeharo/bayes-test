@@ -232,6 +232,7 @@ El script informa de:
 bayes-test/
 ├── index.html                                    Interfaz y lógica del sistema bayesiano
 ├── questions.js                                  Banco de 90 preguntas
+├── ayuda.html                                    Guía de uso y fundamentos técnicos
 ├── scripts/
 │   └── simulate.js                               Simulaciones reproducibles del motor adaptativo
 └── README.md                                     Este documento

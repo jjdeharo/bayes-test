@@ -234,9 +234,6 @@ bayes-test/
 ├── questions.js                                  Banco de 90 preguntas
 ├── scripts/
 │   └── simulate.js                               Simulaciones reproducibles del motor adaptativo
-├── documentacion.html                            Protocolo para crear sistemas adaptativos bayesianos
-├── matematicas.html                              Explicación matemática detallada con ejemplos numéricos
-├── documentacion_evaluacion_adaptativa_bayesiana.md  Fuente de la documentación (Markdown)
 └── README.md                                     Este documento
 ```
 

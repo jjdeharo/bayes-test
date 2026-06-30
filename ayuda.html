@@ -191,6 +191,7 @@ html[data-theme="dark"] td{color:var(--text)}
       <li>La <strong>distribución final de probabilidades</strong> sobre los tres niveles.</li>
       <li>Resultados por dificultad: cuántas preguntas fáciles, medias y difíciles acertaste.</li>
       <li>Categorías con más errores y recomendaciones concretas.</li>
+      <li>Un indicador de <strong>coherencia del patrón (person-fit)</strong>: si el patrón de aciertos y fallos es coherente con el nivel estimado o presenta anomalías.</li>
       <li>El historial completo de preguntas con el nivel estimado tras cada respuesta.</li>
       <li>Una explicación de <em>cómo adaptó el sistema las preguntas</em> durante la sesión.</li>
     </ul>
@@ -225,7 +226,10 @@ html[data-theme="dark"] td{color:var(--text)}
 
   <div class="card">
     <h2>🎯 Selección adaptativa de preguntas</h2>
-    <p>El sistema elige cada pregunta maximizando la <strong>ganancia esperada de información</strong>: la reducción esperada de entropía tras conocer la respuesta.</p>
+    <h3>Fase diagnóstica inicial</h3>
+    <p>Antes de pasar a la selección adaptativa pura, el sistema garantiza al menos <strong>2 preguntas de cada nivel de dificultad</strong> (fácil, media y difícil). De los niveles aún insuficientes, se elige el que mayor ganancia de información esperada ofrece con el prior actual. Esta fase asegura que la distribución de probabilidades se haya actualizado con evidencia de los tres rangos de dificultad antes de confiar exclusivamente en el criterio informativo.</p>
+    <h3>Fase adaptativa pura</h3>
+    <p>Una vez cubierta la fase diagnóstica, el sistema elige cada pregunta maximizando la <strong>ganancia esperada de información</strong>: la reducción esperada de entropía tras conocer la respuesta.</p>
     <div class="formula-box" id="f-ig"></div>
     <p>donde <em>H</em> es la <strong>entropía de Shannon</strong>, que mide la incertidumbre actual:</p>
     <div class="formula-box" id="f-entropy"></div>
@@ -240,7 +244,7 @@ html[data-theme="dark"] td{color:var(--text)}
     <div class="stop-grid">
       <div class="stop-cell s-certain">
         <strong>✅ Convergencia bayesiana</strong>
-        Tras al menos 6 preguntas, la entropía cae por debajo de H<sub>stop</sub> <em>y</em> el nivel más probable supera el 80&thinsp;% de confianza. El diagnóstico es firme.
+        Tras al menos 8 preguntas (con ≥ 2 de cada dificultad), la entropía cae por debajo de H<sub>stop</sub> <em>y</em> el nivel más probable supera el 85&thinsp;% de confianza. El diagnóstico es firme.
       </div>
       <div class="stop-cell s-gain">
         <strong>📉 Ganancia mínima</strong>
@@ -251,9 +255,9 @@ html[data-theme="dark"] td{color:var(--text)}
         Se alcanza el máximo calculado por minimax (nunca más de 20). El sistema devuelve una estimación provisional.
       </div>
     </div>
-    <p style="margin-top:12px">El umbral de entropía H<sub>stop</sub> se deriva de una confianza mínima p<sub>min</sub> = 0,80:</p>
+    <p style="margin-top:12px">El umbral de entropía H<sub>stop</sub> se deriva de una confianza mínima p<sub>min</sub> = 0,85:</p>
     <div class="formula-box" id="f-hstop"></div>
-    <p>Con n = 3 niveles y p<sub>min</sub> = 0,80, este umbral vale aproximadamente <strong id="hstop-val"></strong> bits (frente a la entropía máxima de <strong id="h0-val"></strong> bits con distribución uniforme).</p>
+    <p>Con n = 3 niveles y p<sub>min</sub> = 0,85, este umbral vale aproximadamente <strong id="hstop-val"></strong> bits (frente a la entropía máxima de <strong id="h0-val"></strong> bits con distribución uniforme).</p>
     <div class="note-ok">💡 El número máximo real de preguntas se calcula al inicio mediante un análisis <strong>minimax</strong> sobre todos los caminos posibles del banco: garantiza que el valor mostrado en pantalla es siempre alcanzable en el peor caso.</div>
   </div>
 
@@ -261,18 +265,31 @@ html[data-theme="dark"] td{color:var(--text)}
     <h2>🔍 Interpretación de los resultados</h2>
     <p>El informe final distingue dos situaciones:</p>
     <ul>
-      <li><strong>Diagnóstico firme</strong> — la entropía final está por debajo de H<sub>stop</sub> y el nivel más probable supera el 80&thinsp;%. La estimación es confiable.</li>
+      <li><strong>Diagnóstico firme</strong> — la entropía final está por debajo de H<sub>stop</sub> y el nivel más probable supera el 85&thinsp;%. La estimación es confiable.</li>
       <li><strong>Diagnóstico provisional</strong> — el test terminó por ganancia baja o por límite máximo antes de converger. La estimación puede revisarse con más preguntas o un banco mejor calibrado.</li>
     </ul>
     <p>La interpretación pedagógica analiza los resultados por dificultad y por categoría, identifica las áreas con más errores y ofrece una recomendación concreta de siguiente paso.</p>
   </div>
 
   <div class="card">
+    <h2>🔎 Person-fit: coherencia del patrón de respuestas</h2>
+    <p>La entropía mide cuán seguro está el modelo, pero no si tiene derecho a estarlo para un alumno concreto. Un patrón aberrante —acertar preguntas difíciles y fallar las fáciles, por ejemplo— puede producir una distribución posterior concentrada que, sin embargo, no es fiable. El <strong>estadístico l<sub>z</sub></strong> (Drasgow &amp; Levine-Williams) detecta exactamente esto.</p>
+    <p>Para el nivel estimado θ, se compara la log-verosimilitud observada del patrón con la que el modelo IRT esperaría si el alumno fuese realmente de ese nivel:</p>
+    <div class="formula-box" id="f-lz"></div>
+    <ul class="param-list">
+      <li><span class="param-key" id="pk-lobs"></span><span id="f-lobs-def"></span></li>
+      <li><span class="param-key" id="pk-lexp"></span><span id="f-lexp-def"></span></li>
+      <li><span class="param-key" id="pk-varl"></span><span id="f-varl-def"></span></li>
+    </ul>
+    <p>Bajo el modelo IRT, <span id="f-lz-inline"></span> sigue aproximadamente una distribución <span id="f-lz-dist"></span>. Valores muy negativos (umbral: <span id="f-lz-thresh"></span>) indican un patrón atípico e implican que el diagnóstico, aunque el modelo lo dé como «seguro», puede no ser fiable para ese alumno en concreto. El informe final muestra este indicador cuando se dispone de suficientes ítems (≥ 8).</p>
+    <div class="note">💡 El person-fit es la única señal que detecta mala especificación caso a caso: la entropía dice cuán seguro está el modelo de sí mismo; el person-fit dice si tiene derecho a estarlo.</div>
+  </div>
+
+  <div class="card">
     <h2>📐 Para saber más</h2>
-    <p>Los fundamentos matemáticos completos —teorema de Bayes, modelo IRT 3PL, entropía de Shannon, ganancia de información y ejemplo numérico paso a paso— están disponibles en:</p>
+    <p>Los fundamentos matemáticos completos —teorema de Bayes, modelo IRT 3PL, entropía de Shannon, ganancia de información y ejemplo numérico paso a paso— así como el protocolo para <strong>crear tus propios recursos educativos adaptativos</strong> están disponibles en:</p>
     <ul>
-      <li><a href="https://jjdeharo.github.io/recursos-adaptativos/matematicas.html" target="_blank" rel="noopener">Explicación matemática detallada →</a></li>
-      <li><a href="https://jjdeharo.github.io/recursos-adaptativos/documentacion.html" target="_blank" rel="noopener">Protocolo para crear tus propios recursos adaptativos →</a></li>
+      <li><a href="https://jjdeharo.github.io/recursos-adaptativos" target="_blank" rel="noopener">Recursos adaptativos bayesianos →</a></li>
     </ul>
   </div>
 
@@ -299,7 +316,7 @@ const ri = (id, latex) =>
 // ── parámetros reales del motor ──────────────────────────────────────────────
 const B_MAX      = Math.max(...QUESTIONS.map(q => Math.abs(q.dificultad)));
 const THETA_MAX  = B_MAX * 2;
-const H_STOP_VAL = -(0.80 * Math.log2(0.80)) - (0.20 * Math.log2(0.20 / 2));
+const H_STOP_VAL = -(0.85 * Math.log2(0.85)) - (0.15 * Math.log2(0.15 / 2));
 const H0_VAL     = Math.log2(3);
 
 document.getElementById('hstop-val').textContent = H_STOP_VAL.toFixed(2);
@@ -322,6 +339,19 @@ rd('f-div',
 
 rd('f-hstop',
   'H_{\\text{stop}} = -p_{\\min}\\log_2 p_{\\min} - (1-p_{\\min})\\log_2\\!\\left(\\dfrac{1-p_{\\min}}{n-1}\\right)');
+
+rd('f-lz',
+  'l_z = \\dfrac{l_{\\text{obs}} - l_{\\text{exp}}}{\\sqrt{\\sigma^2_l}}');
+
+ri('pk-lobs', 'l_{\\text{obs}}');
+ri('pk-lexp', 'l_{\\text{exp}}');
+ri('pk-varl', '\\sigma^2_l');
+ri('f-lobs-def', '\\textstyle\\sum_k \\log P(r_k \\mid \\theta)\\quad\\text{(log-verosimilitud observada)}');
+ri('f-lexp-def', '\\textstyle\\sum_k [p_k \\log p_k + q_k \\log q_k]\\quad\\text{(esperada bajo el modelo IRT)}');
+ri('f-varl-def', '\\textstyle\\sum_k p_k\\,q_k\\,(\\log p_k - \\log q_k)^2\\quad\\text{(varianza de la log-verosimilitud)}');
+ri('f-lz-inline', 'l_z');
+ri('f-lz-dist', '\\mathcal{N}(0,1)');
+ri('f-lz-thresh', 'l_z < -2{,}0');
 
 // ── valores θ y b reales ─────────────────────────────────────────────────────
 ri('t0', `\\theta = ${-THETA_MAX}`);

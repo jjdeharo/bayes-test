@@ -284,7 +284,7 @@ const NIVELES = [
   { nombre: 'Medio',    theta:  0            },
   { nombre: 'Avanzado', theta:  THETA_SCALE  },
 ];
-const SENSIBILIDAD = 1.5;
+const SENSIBILIDAD = 2.0;
 
 // ─── IRT 3PL ──────────────────────────────────────────────────────────────────
 
@@ -307,7 +307,7 @@ function entropy(dist) {
   return -dist.reduce((h, p) => h + (p > 1e-10 ? p * Math.log2(p) : 0), 0);
 }
 
-const H_STOP = entropy([0.80, 0.10, 0.10]);
+const H_STOP = entropy([0.85, 0.075, 0.075]);
 
 function gananciaInformacion(priores, pregunta) {
   const veros    = generarVerosimilitudes(pregunta);
@@ -354,7 +354,7 @@ function bestInformationGain(priorDist, counts = null) {
 function shouldStop(priorDist, answeredCount) {
   return answeredCount >= MIN_Q &&
     entropy(priorDist) < H_STOP &&
-    Math.max(...priorDist) >= 0.80;
+    Math.max(...priorDist) >= 0.85;
 }
 
 function shouldStopLowGain(priorDist, answeredCount, counts = null) {

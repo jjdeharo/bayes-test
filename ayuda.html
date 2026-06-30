@@ -82,11 +82,50 @@ tr:last-child td{border-bottom:none}
   .level-row{flex-direction:column}
   .stop-grid{grid-template-columns:1fr}
 }
+
+/* ─── THEME SWITCHER ──────────────────────────────────────────────────────── */
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.theme-switcher{display:flex;background:var(--pri);border-radius:.5rem;padding:.2rem}
+.theme-btn{background:transparent;border:none;cursor:pointer;padding:.25rem .4rem;border-radius:.35rem;font-size:.95rem;line-height:1;color:rgba(255,255,255,.7);transition:background .15s,color .15s}
+.theme-btn.active{background:rgba(255,255,255,.28);color:#fff}
+.theme-btn:hover:not(.active){background:rgba(255,255,255,.18);color:#fff}
+
+/* ─── DARK MODE ───────────────────────────────────────────────────────────── */
+html[data-theme="dark"]{
+  --pri:#818cf8;--pri-l:#a5b4fc;--pri-bg:#1e1b4b;
+  --ok:#34d399;--ok-bg:#052e16;
+  --warn-bg:#1c1308;--warn-b:#854d0e;--warn-t:#fde68a;
+  --bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;
+}
+html[data-theme="dark"] .formula-box{background:#0d1b2a;border-color:#1e3a5f}
+html[data-theme="dark"] .note-ok{border-color:#166534}
+html[data-theme="dark"] .cat-chip{background:#1a2742}
+html[data-theme="dark"] .tag-easy  {background:#422006;color:#fed7aa}
+html[data-theme="dark"] .tag-medium{background:#1e3a5f;color:#bfdbfe}
+html[data-theme="dark"] .tag-hard  {background:#2e1065;color:#e9d5ff}
+html[data-theme="dark"] .lv.l0{background:#422006;color:#fed7aa}
+html[data-theme="dark"] .lv.l1{background:#1e3a5f;color:#bfdbfe}
+html[data-theme="dark"] .lv.l2{background:#2e1065;color:#e9d5ff}
+html[data-theme="dark"] .stop-cell.s-certain{background:#052e16;border-color:#166534}
+html[data-theme="dark"] .stop-cell.s-gain{background:#1e3a5f;border-color:#2563eb}
+html[data-theme="dark"] .stop-cell.s-max{background:#422006;border-color:#854d0e}
+html[data-theme="dark"] th{background:var(--pri-bg);color:var(--pri-l)}
+html[data-theme="dark"] td{color:var(--text)}
 </style>
+<script>
+(function(){var t=localStorage.getItem('bayes-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);if(d)document.documentElement.setAttribute('data-theme','dark');})();
+</script>
 </head>
 <body>
 <div class="wrap">
-  <a class="back-btn" href="index.html">← Volver al test</a>
+  <div class="top-bar">
+    <a class="back-btn" href="index.html" style="margin-bottom:0">← Volver al test</a>
+    <div class="theme-switcher">
+      <button class="theme-btn" data-theme="system" onclick="setTheme('system')" title="Seguir tema del sistema">🖥</button>
+      <button class="theme-btn" data-theme="light"  onclick="setTheme('light')"  title="Tema claro">☀️</button>
+      <button class="theme-btn" data-theme="dark"   onclick="setTheme('dark')"   title="Tema oscuro">🌙</button>
+    </div>
+  </div>
 
   <h1>📊 Cómo funciona el test</h1>
   <p class="sub">Sistema Adaptativo Bayesiano · Cultura General</p>
@@ -295,6 +334,23 @@ ri('pk-c', 'c_q');
 ri('b0', 'b = -1');
 ri('b1', 'b = 0');
 ri('b2', 'b = +1');
+
+// ─── THEME ────────────────────────────────────────────────────────────────────
+function applyTheme(mode) {
+  const dark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  dark
+    ? document.documentElement.setAttribute('data-theme', 'dark')
+    : document.documentElement.removeAttribute('data-theme');
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === mode));
+}
+function setTheme(mode) {
+  localStorage.setItem('bayes-theme', mode);
+  applyTheme(mode);
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  applyTheme(localStorage.getItem('bayes-theme') || 'system');
+});
+applyTheme(localStorage.getItem('bayes-theme') || 'system');
 </script>
 </body>
 </html>

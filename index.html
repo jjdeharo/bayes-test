@@ -106,6 +106,61 @@
     }
     .hub-link:hover { opacity: 1; text-decoration: underline; }
 
+    /* ── Fiabilidad del test (Monte Carlo) ── */
+    .btn-ghost {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      padding: 0.6rem 1.2rem;
+      margin-top: 1rem;
+    }
+    .btn-ghost:hover { background: var(--bg); transform: translateY(-1px); }
+    .reliability-panel {
+      margin-top: 1rem;
+      text-align: left;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem 1.1rem;
+      background: var(--bg);
+    }
+    .mc-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.4rem; }
+    .mc-plain {
+      background: var(--card);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 0.9rem;
+      font-size: 0.83rem;
+      line-height: 1.55;
+    }
+    .mc-demo {
+      background: #fffbeb;
+      border-left: 3px solid #f59e0b;
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 0.9rem;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: #92400e;
+    }
+    html[data-theme="dark"] .mc-demo { background: #2a2010; color: #fcd9a0; }
+    .mc-demo strong { color: #b45309; }
+    html[data-theme="dark"] .mc-demo strong { color: #fbbf24; }
+    .mc-plain strong { color: var(--primary); }
+    .mc-plain p { margin: 0 0 0.5rem; }
+    .mc-plain p:last-child { margin-bottom: 0; }
+    .mc-desc, .mc-note { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+    .mc-desc { margin-bottom: 0.7rem; }
+    .mc-note { margin-top: 0.7rem; font-style: italic; }
+    .mc-acc { font-size: 0.9rem; margin-top: 0.7rem; }
+    .mc-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .mc-table th, .mc-table td { padding: 0.45rem 0.5rem; text-align: center; border-bottom: 1px solid var(--border); }
+    .mc-table thead th { color: var(--muted); font-weight: 600; font-size: 0.76rem; }
+    .mc-table tbody th { text-align: left; font-weight: 600; }
+    .mc-cell { color: var(--muted); }
+    .mc-hit { color: var(--primary); font-weight: 700; background: rgba(79,70,229,0.08); }
+
     /* WELCOME */
     .welcome-hero { text-align: center; padding: 0.25rem 0 0.75rem; }
     .welcome-hero .icon { font-size: 2.5rem; margin-bottom: 0.4rem; }
@@ -584,6 +639,8 @@
         <button class="btn btn-primary" onclick="startQuiz()">▶ Comenzar el test</button>
         <a class="hub-link" href="ayuda.html">❓ Cómo funciona →</a>
         <a class="hub-link" href="https://jjdeharo.github.io/recursos-adaptativos/">Protocolo y más recursos adaptativos →</a>
+        <button class="btn btn-ghost" onclick="showReliability()">📐 Ver fiabilidad del test</button>
+        <div id="reliability-panel" class="reliability-panel" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -871,6 +928,37 @@ function shouldStopLowGain(priorDist, answeredCount, counts = null) {
   return answeredCount >= MIN_Q_IG && bestInformationGain(priorDist, counts) < IG_MIN;
 }
 
+// ─── PERSON-FIT (lz de Drasgow/Levine-Williams) ────────────────────────────────
+// Mide si el PATRÓN de respuestas es coherente con el nivel estimado. Contrasta la
+// log-verosimilitud observada del patrón con la esperada bajo el modelo IRT si el
+// alumno fuese realmente de ese nivel. Estandarizado, lz ≈ N(0,1): valores muy
+// negativos delatan un patrón aberrante (p. ej. acertar difíciles y fallar fáciles),
+// que indica que el diagnóstico —aunque el modelo lo dé como "seguro"— puede no ser
+// fiable para este alumno. Es la única señal que detecta mala especificación caso a
+// caso: la entropía dice cuán seguro está el modelo, no si tiene derecho a estarlo.
+const PF_THRESHOLD = -2.0;   // lz por debajo de este valor: patrón atípico
+
+function personFit(hist, lvl) {
+  const theta = NIVELES[lvl].theta;
+  let lObs = 0, lExp = 0, varL = 0, n = 0;
+
+  for (const h of hist) {
+    if (h.dificultad == null || h.opciones == null) continue;
+    const p = probabilidadAcierto(theta, h.dificultad, h.opciones);
+    const q = 1 - p;
+    if (p <= 1e-6 || q <= 1e-6) continue;          // verosimilitud degenerada
+    const logit = Math.log(p) - Math.log(q);
+    lObs += h.correct ? Math.log(p) : Math.log(q);
+    lExp += p * Math.log(p) + q * Math.log(q);
+    varL += p * q * logit * logit;
+    n++;
+  }
+
+  if (n < MIN_Q || varL < 1e-9) return null;        // datos insuficientes o sin varianza
+  const lz = (lObs - lExp) / Math.sqrt(varL);
+  return { lz, n, atipico: lz < PF_THRESHOLD };
+}
+
 function posteriorAfter(priorDist, pregunta, isCorrect) {
   const veros = generarVerosimilitudes(pregunta);
   const raw = priorDist.map((p, i) => p * (isCorrect ? veros[i].acierto : veros[i].fallo));
@@ -1011,6 +1099,51 @@ function selectNext() {
   return candidates[candidates.length - 1];
 }
 
+// ─── MONTE CARLO: FIABILIDAD DEL DISEÑO ─────────────────────────────────────────
+// Valida el TEST en su conjunto (no a un alumno concreto): genera respondentes
+// sintéticos situados exactamente en el θ de cada nivel y, reutilizando la misma
+// selección adaptativa y la misma regla de parada del test real, mide con qué
+// frecuencia el diagnóstico acierta el nivel verdadero. Produce una matriz de
+// confusión teórica. Es fiabilidad BAJO EL MODELO —los respondentes salen del propio
+// modelo IRT—, no validez empírica: si ni siquiera respondentes ideales situados en
+// el θ de cada nivel se separan bien, el banco de preguntas no discrimina ese nivel.
+
+function simulateSession(thetaTrue) {
+  prior    = [1/3, 1/3, 1/3];
+  askedIds = new Set();
+  history  = [];
+  answered = 0;
+
+  while (!(shouldStop(prior, answered) || shouldStopLowGain(prior, answered) || answered >= MAX_Q)) {
+    const q = selectNext();
+    if (!q) break;
+    const p = probabilidadAcierto(thetaTrue, q.dificultad, q.opciones);
+    const isCorrect = Math.random() < p;
+    askedIds.add(q.id);
+    updatePrior(isCorrect, generarVerosimilitudes(q));
+    history.push({ cat: q.cat, diff: q.diff, dificultad: q.dificultad, opciones: q.opciones, correct: isCorrect });
+    answered++;
+  }
+  return { lvl: bestLevel(), nq: answered };
+}
+
+function runMonteCarlo(nPerLevel = 2000) {
+  const saved  = { prior, askedIds, currentQ, answered, correct, history, stopCause };
+  const matrix = [[0,0,0],[0,0,0],[0,0,0]];   // matrix[verdadero][diagnosticado]
+  const nqSum  = [0, 0, 0];
+
+  for (let truth = 0; truth < 3; truth++) {
+    for (let s = 0; s < nPerLevel; s++) {
+      const { lvl, nq } = simulateSession(NIVELES[truth].theta);
+      matrix[truth][lvl]++;
+      nqSum[truth] += nq;
+    }
+  }
+
+  ({ prior, askedIds, currentQ, answered, correct, history, stopCause } = saved);
+  return { matrix, nq: nqSum.map(t => t / nPerLevel), nPerLevel };
+}
+
 // ─── UI HELPERS ───────────────────────────────────────────────────────────────
 
 function copyAiPrompt() {
@@ -1026,6 +1159,61 @@ function copyAiPrompt() {
     btn.textContent = '¡Copiado!'; btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
   });
+}
+
+function showReliability() {
+  const panel = document.getElementById('reliability-panel');
+  panel.style.display = 'block';
+  panel.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:0.85rem">Calculando… (simulando miles de tests)</p>';
+
+  // Pequeño retardo para que el navegador pinte el "Calculando…" antes del cálculo.
+  setTimeout(() => {
+    const { matrix, nq, nPerLevel } = runMonteCarlo(600);
+    const total    = nPerLevel * 3;
+    const aciertos = matrix.reduce((s, row, i) => s + row[i], 0);
+    const exactitud = Math.round(100 * aciertos / total);
+
+    const rows = matrix.map((row, i) => {
+      const sum = row.reduce((a, b) => a + b, 0) || 1;
+      const cells = row.map((c, j) =>
+        `<td class="mc-cell${i === j ? ' mc-hit' : ''}">${Math.round(100 * c / sum)}%</td>`
+      ).join('');
+      return `<tr><th>${LEVELS[i]}</th>${cells}<td>${nq[i].toFixed(1)}</td></tr>`;
+    }).join('');
+
+    panel.innerHTML =
+      `<h3 class="mc-title">Fiabilidad del test (simulación Monte Carlo)</h3>` +
+      `<div class="mc-demo">⚠️ <strong>Nota para el docente:</strong> este panel se incluye aquí solo con ` +
+      `fines demostrativos del método. La validación Monte Carlo es una herramienta del creador del test ` +
+      `—para comprobar el diseño antes de usarlo— y <strong>no debe formar parte del material que ve el alumno</strong>. ` +
+      `En un recurso real, genérala en un archivo o utilidad aparte, fuera de la interfaz del alumnado.</div>` +
+      `<div class="mc-plain">` +
+        `<p><strong>¿Qué estás viendo?</strong> Para comprobar si este test funciona bien, ` +
+        `el ordenador ha “inventado” ${nPerLevel.toLocaleString('es')} estudiantes de cada nivel ` +
+        `—básico, medio y avanzado— de los que ya sabemos con certeza su nivel, y les ha hecho el ` +
+        `test. Después ha contado cuántas veces el test acierta el nivel de cada uno.</p>` +
+        `<p><strong>Cómo leer la tabla:</strong> busca un nivel en la fila de la izquierda y sigue ` +
+        `hacia la derecha. La casilla <strong>de color</strong> indica el porcentaje de veces que el ` +
+        `test <strong>acierta</strong> ese nivel; las otras casillas de la fila son los errores ` +
+        `(con qué nivel lo confunde y cuánto). Cuanto más altos los números de color, mejor.</p>` +
+        `<p><strong>Exactitud global:</strong> de cada 100 estudiantes, cuántos quedan bien ` +
+        `clasificados. <strong>Nº preg.</strong> es cuántas preguntas necesita de media para decidir.</p>` +
+        `<p style="color:var(--muted);font-style:italic">Ojo: son estudiantes simulados, no reales. ` +
+        `Esto comprueba que el test distingue bien los niveles <em>en teoría</em>; no sustituye a ` +
+        `probarlo con alumnado de verdad.</p>` +
+      `</div>` +
+      `<p class="mc-desc">${nPerLevel.toLocaleString('es')} respondentes simulados por nivel. ` +
+      `Cada fila es el nivel <em>real</em>; cada columna, el nivel <em>diagnosticado</em>. ` +
+      `La diagonal resaltada son los aciertos.</p>` +
+      `<table class="mc-table">` +
+        `<thead><tr><th></th><th>${LEVELS[0]}</th><th>${LEVELS[1]}</th><th>${LEVELS[2]}</th><th>Nº preg.</th></tr></thead>` +
+        `<tbody>${rows}</tbody>` +
+      `</table>` +
+      `<p class="mc-acc">Exactitud global del diseño: <strong>${exactitud}%</strong></p>` +
+      `<p class="mc-note">Es fiabilidad <em>bajo el modelo</em>: los respondentes se generan ` +
+      `desde el propio modelo IRT, situados en el θ exacto de cada nivel. Mide si el banco de ` +
+      `preguntas discrimina los niveles, no la validez empírica real.</p>`;
+  }, 50);
 }
 
 function showScreen(id) {
@@ -1116,6 +1304,8 @@ function handleAnswer(chosen) {
     num: answered + 1,
     q: currentQ.q,
     diff: currentQ.diff,
+    dificultad: currentQ.dificultad,
+    opciones: currentQ.opciones,
     cat: currentQ.cat,
     correct: isCorrect,
     priorBefore,
@@ -1265,7 +1455,27 @@ function interpretacionPedagogica() {
         `(${finalH.toFixed(2)} bits) supera el umbral deseado (${H_STOP.toFixed(2)} bits).`,
   });
 
-  return { bloques, esFirme };
+  // 6. Coherencia del patrón (person-fit): detecta si la clasificación es fiable
+  //    para ESTE alumno, más allá de cuán seguro esté el modelo de sí mismo.
+  const pf = personFit(history, lvl);
+  if (pf) {
+    bloques.push({
+      label: 'Coherencia del patrón (person-fit)',
+      provisional: pf.atipico,
+      text: pf.atipico
+        ? `El patrón de respuestas es atípico para el nivel estimado ` +
+          `(índice lz = ${pf.lz.toFixed(2)}, por debajo del umbral ${PF_THRESHOLD.toFixed(1)}). ` +
+          `Suele indicar respuestas incoherentes con la dificultad —por ejemplo, acertar preguntas ` +
+          `difíciles y fallar fáciles—, descuidos o azar. Aunque el modelo asigne una probabilidad ` +
+          `alta, conviene tomar este diagnóstico con cautela: la clasificación podría no ser fiable ` +
+          `para este alumno.`
+        : `El patrón de respuestas es coherente con el nivel estimado ` +
+          `(índice lz = ${pf.lz.toFixed(2)}, dentro de lo esperable). El alumno acierta y falla en ` +
+          `línea con la dificultad de cada pregunta, lo que refuerza la fiabilidad del diagnóstico.`,
+    });
+  }
+
+  return { bloques, esFirme, personFit: pf };
 }
 
 function showResults() {

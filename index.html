@@ -631,7 +631,7 @@
         <div class="prog-fill" id="prog-fill" style="width:0%"></div>
       </div>
       <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); margin-top:0.3rem;">
-        <span id="certainty-note">Certeza: 33% · para al superar el 80% (mín. 6 preguntas)</span>
+        <span id="certainty-note">Certeza: 33% · para al superar el 85% (mín. 6 preguntas)</span>
         <span title="Peor caso real: parada firme si converge antes o agotamiento del banco de preguntas">máx. <span id="maxq-note"></span></span>
       </div>
     </div>
@@ -833,7 +833,7 @@ function entropy(dist) {
 }
 
 const H0     = Math.log2(3);
-const H_STOP = entropy([0.80, 0.10, 0.10]);
+const H_STOP = entropy([0.85, 0.075, 0.075]);
 
 function gananciaInformacion(priores, pregunta) {
   const veros    = generarVerosimilitudes(pregunta);
@@ -884,7 +884,7 @@ const QUESTION_GROUPS = Object.values(QUESTIONS.reduce((groups, q) => {
 function shouldStop(priorDist, answeredCount) {
   return answeredCount >= MIN_Q &&
     entropy(priorDist) < H_STOP &&
-    Math.max(...priorDist) >= 0.80;
+    Math.max(...priorDist) >= 0.85;
 }
 
 function shouldStopLowGain(priorDist, answeredCount, counts = null) {
@@ -1224,7 +1224,7 @@ function interpretacionPedagogica() {
   const lvl     = bestLevel();
   const mapProb = Math.max(...prior);
   const finalH  = entropy(prior);
-  const esFirme = finalH < H_STOP && mapProb >= 0.80;
+  const esFirme = finalH < H_STOP && mapProb >= 0.85;
 
   // Estadísticas por dificultad
   const stats = [0, 1, 2].map(d => ({
@@ -1322,16 +1322,6 @@ function interpretacionPedagogica() {
   //    para ESTE alumno, más allá de cuán seguro esté el modelo de sí mismo.
   const pf = personFit(history, lvl);
   if (pf) {
-    const pfTech =
-      `<strong>Índice l<sub>z</sub> (person-fit · Drasgow et al., 1985):</strong> ` +
-      `compara la log-verosimilitud observada del patrón de respuestas con la que se esperaría ` +
-      `si el alumno fuese realmente del nivel estimado. Estandarizado, sigue aproximadamente ` +
-      `una distribución N(0,1): valores próximos a 0 indican coherencia; valores muy negativos ` +
-      `(orientativamente &lt; ${PF_THRESHOLD.toFixed(1)}) señalan un patrón aberrante ` +
-      `—por ejemplo, acertar preguntas difíciles y fallar fáciles—, lo que puede indicar ` +
-      `descuidos, azar o que el modelo no se ajusta bien a este alumno concreto.` +
-      `<br><code>l<sub>z</sub> = ${pf.lz.toFixed(2)} · N = ${pf.n} preguntas · umbral: &lt; ${PF_THRESHOLD.toFixed(1)}</code>`;
-
     bloques.push({
       label: 'Coherencia del patrón (person-fit)',
       provisional: pf.atipico,
@@ -1342,7 +1332,6 @@ function interpretacionPedagogica() {
           `tomar este diagnóstico con cautela: la clasificación podría no ser fiable para este alumno.`
         : `El patrón de respuestas es coherente con el nivel estimado. El alumno acierta y falla ` +
           `en línea con la dificultad de cada pregunta, lo que refuerza la fiabilidad del diagnóstico.`,
-      tech: pfTech,
     });
   }
 
@@ -1404,7 +1393,7 @@ function showResults() {
   const finalH     = entropy(prior);
   const stopReason = esFirme
     ? `la entropía bajó a ${finalH.toFixed(2)} bits (umbral: ${H_STOP.toFixed(2)} bits) ` +
-      `y la hipótesis más probable superó el 80 %`
+      `y la hipótesis más probable superó el 85 %`
     : stopCause === 'low_gain'
     ? `la mejor pregunta restante aportaba menos de ${IG_MIN.toFixed(3)} bits de información ` +
       `esperada a partir de la pregunta ${MIN_Q_IG}`

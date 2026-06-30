@@ -129,24 +129,37 @@ Donde:
 
 Se selecciona la pregunta con mayor $IG$. Entre candidatas con ganancia prácticamente igual, se elige al azar con peso inversamente proporcional a las veces que su categoría ha aparecido ya, para favorecer la diversidad temática. La aleatorización usa el algoritmo de Fisher-Yates para garantizar una distribución uniforme.
 
+### Fase diagnóstica inicial
+
+> **Resumen sin fórmulas:** antes de que el algoritmo adaptativo tome el control, el sistema garantiza que el alumno responda al menos una pregunta de cada nivel de dificultad (fácil, media y difícil). Esto evita que un fallo puntual en las primeras preguntas encierre al alumno en un segmento de dificultad y le impida demostrar lo que sabe.
+
+La selección de preguntas opera en **dos fases**:
+
+1. **Fase diagnóstica.** Mientras alguno de los tres niveles de dificultad (fácil, media, difícil) tenga menos de 2 preguntas respondidas, el selector elige entre los niveles con menos de 2 el que tenga mayor ganancia esperada de información y, dentro de él, la pregunta más informativa. Esta fase ocupa habitualmente las primeras 6 preguntas.
+
+2. **Fase adaptativa.** Una vez que los tres niveles acumulan al menos 2 preguntas cada uno, el selector pasa a maximizar la ganancia esperada de información sin restricciones de dificultad, con desempate aleatorio ponderado por diversidad de categoría.
+
+Este diseño responde a una limitación del selector puramente adaptativo: cuando las primeras respuestas desplazan el posterior con fuerza hacia un nivel extremo, la ganancia esperada de preguntas alejadas de ese nivel se reduce tanto que nunca serían seleccionadas, impidiendo al alumno demostrar su nivel real. Exigir 2 preguntas por nivel garantiza que un único fallo en difícil no cierre la posibilidad de llegar al nivel máximo: el alumno recibirá una segunda pregunta difícil antes de que el test pueda converger.
+
 ### Condición de parada basada en incertidumbre
 
-> **Resumen sin fórmulas:** el test no termina después de un número fijo de preguntas, sino cuando el sistema considera que ya sabe con suficiente seguridad cuál es el nivel del alumno. Esa seguridad se mide con la entropía y con la probabilidad de la hipótesis más probable. Un alumno con un nivel muy claro puede terminar en 6 preguntas; uno con respuestas inconsistentes necesitará más.
+> **Resumen sin fórmulas:** el test no termina después de un número fijo de preguntas, sino cuando el sistema considera que ya sabe con suficiente seguridad cuál es el nivel del alumno. Esa seguridad se mide con la entropía y con la probabilidad de la hipótesis más probable. Un alumno con un nivel muy claro puede terminar en 6–7 preguntas; uno con respuestas inconsistentes necesitará más.
 
-El test finaliza cuando se cumplen **simultáneamente** las dos condiciones siguientes, con un mínimo de **6 preguntas**:
+El test finaliza cuando se cumplen **simultáneamente** las tres condiciones siguientes, con un mínimo de **6 preguntas**:
 
 1. $H(\pi) < H_{\text{stop}}$
-2. $\max_i \pi_i \geq 0{,}80$
+2. $\max_i \pi_i \geq 0{,}85$
+3. Se han respondido al menos 2 preguntas de cada nivel de dificultad
 
-Comprobar los dos criterios es necesario porque $H_{\text{stop}}$ se calcula suponiendo distribución uniforme de la probabilidad residual, lo que es una aproximación.
+La tercera condición garantiza que el diagnóstico se basa en evidencia suficiente de todo el espectro de dificultad. Un único fallo en difícil no puede cerrar el diagnóstico: el alumno recibirá siempre una segunda oportunidad en ese nivel.
 
 **Entropía inicial** — prior uniforme sobre 3 niveles:
 
 $$H_0 = \log_2 3 \approx 1{,}585 \text{ bits}$$
 
-**Umbral de parada** — entropía de la distribución $[0{,}80,\, 0{,}10,\, 0{,}10]$, la menos concentrada que aún pone el 80 % de masa en un nivel:
+**Umbral de parada** — entropía de la distribución $[0{,}85,\, 0{,}075,\, 0{,}075]$, la menos concentrada que aún pone el 85 % de masa en un nivel:
 
-$$H_{\text{stop}} = -(0{,}80\log_2 0{,}80 + 0{,}10\log_2 0{,}10 + 0{,}10\log_2 0{,}10) \approx 0{,}922 \text{ bits}$$
+$$H_{\text{stop}} = -(0{,}85\log_2 0{,}85 + 0{,}075\log_2 0{,}075 + 0{,}075\log_2 0{,}075) \approx 0{,}760 \text{ bits}$$
 
 **Número máximo de preguntas** — el sistema combina dos ideas. Primero calcula un peor caso estadístico sobre el banco real agrupando preguntas con los mismos parámetros (`dificultad` y `opciones`). Segundo, aplica un **límite práctico duro de 20 preguntas** para que la experiencia siga siendo usable. Además, a partir de la pregunta 12 puede detenerse antes si la mejor pregunta disponible aporta menos de **0,015 bits** de información esperada. En esta demo, el valor mostrado como $MAX\_Q$ es por tanto un techo práctico, no solo teórico.
 
@@ -154,9 +167,45 @@ La barra de progreso refleja la **reducción relativa de entropía** hacia $H_{\
 
 $$\text{progreso} = \frac{H_0 - H(\pi)}{H_0 - H_{\text{stop}}}$$
 
-### Recuperación automática
+---
 
-La selección por máxima ganancia de información hace que la recuperación sea automática: si el alumno falla preguntas al principio pero después responde correctamente preguntas más difíciles, el posterior se desplaza y el sistema selecciona preguntas cada vez más exigentes sin ninguna lógica adicional.
+## Coherencia del patrón de respuestas (person-fit)
+
+> **Resumen sin fórmulas:** al terminar el test, el sistema comprueba si el orden de aciertos y fallos fue lógico para el nivel estimado. Un alumno que falla preguntas fáciles y acierta difíciles tiene un patrón inusual que merece cautela, aunque el posterior sea alto.
+
+Al cerrar cada sesión, el sistema calcula el **índice de ajuste individual** $l_z$ (Drasgow, Levine y Williams, 1985), que mide si el patrón de respuestas es coherente con el nivel diagnosticado.
+
+Sea $p_q = P(\text{acierto} \mid \hat\theta, q)$ la probabilidad que el modelo asigna a cada pregunta respondida, bajo el nivel estimado $\hat\theta$. La log-verosimilitud observada del patrón es:
+
+$$l_0 = \sum_q \bigl[ x_q \ln p_q + (1 - x_q)\ln(1 - p_q) \bigr]$$
+
+Si el alumno fuese realmente de nivel $\hat\theta$, esta cantidad tendría esperanza y varianza:
+
+$$\mathbb{E}[l_0] = \sum_q \bigl[ p_q \ln p_q + (1-p_q)\ln(1-p_q) \bigr]$$
+
+$$\mathrm{Var}[l_0] = \sum_q p_q(1-p_q)\left[\ln\frac{p_q}{1-p_q}\right]^2$$
+
+El índice estandarizado es:
+
+$$l_z = \frac{l_0 - \mathbb{E}[l_0]}{\sqrt{\mathrm{Var}[l_0]}}$$
+
+Bajo el modelo, $l_z$ se distribuye aproximadamente como $N(0,1)$. Valores muy negativos ($l_z < -2{,}0$) indican un patrón improbable para el nivel estimado: aciertos en difíciles combinados con fallos en fáciles, descuidos o respuestas al azar. En ese caso, el resultado se muestra con advertencia incluso si la confianza estadística es alta. Con pocas preguntas, $l_z$ es solo orientativo — la distribución se aleja de la normal y el umbral es una señal de cautela, no una prueba formal.
+
+---
+
+## Validación del diseño (Monte Carlo)
+
+> **Resumen sin fórmulas:** la herramienta de validación simula miles de alumnos ficticios situados en cada nivel y comprueba con qué frecuencia el test los clasifica correctamente. No mide validez empírica (los alumnos son sintéticos), sino si el diseño del banco discrimina bien los tres niveles.
+
+El archivo `validacion.html` es una utilidad para el **creador del test**. No forma parte de la experiencia del alumno.
+
+El procedimiento genera respondentes sintéticos situados en el $\theta_i$ de cada hipótesis. Para un respondente de nivel $\theta_i$, cada respuesta se simula como un ensayo de Bernoulli con probabilidad $P(A\mid\theta_i,q)$ dada por la IRT 3PL, aplicándole la misma selección adaptativa de dos fases y el mismo criterio de parada que a un alumno real. Repitiendo 2000 veces por nivel se estima la **matriz de confusión**:
+
+$$C_{ij} = P(\text{diagnóstico} = H_j \mid \text{nivel verdadero} = H_i)$$
+
+La diagonal $C_{ii}$ es la tasa de acierto por nivel; los elementos fuera de la diagonal son las confusiones. Se informa también de la exactitud global y la longitud media del test por nivel.
+
+**Límite esencial:** los respondentes se generan con el mismo modelo que los clasifica, de modo que no es validación empírica. Mide la coherencia interna y la separabilidad del diseño — si ni siquiera respondentes ideales situados en el $\theta$ de cada nivel se distinguen bien, el banco no discrimina esos niveles —, pero no garantiza que los $\theta_i$ y las dificultades $b_q$ correspondan a la realidad.
 
 ---
 
@@ -167,9 +216,10 @@ Al terminar el test, el sistema genera una interpretación pedagógica estructur
 - **Dominio observado:** descripción del nivel con desglose de aciertos por dificultad
 - **Dificultades detectadas:** categorías con más errores, destacando los fallos en preguntas fáciles
 - **Recomendación:** acción concreta según el nivel estimado (refuerzo, consolidación o ampliación)
-- **Grado de certeza:** si el diagnóstico es firme (ambos criterios de parada cumplidos) o provisional
+- **Grado de certeza:** si el diagnóstico es firme (todos los criterios de parada cumplidos) o provisional
+- **Coherencia del patrón:** si el índice $l_z$ detecta un patrón atípico, se incluye una nota explicando qué puede haberlo causado
 
-Cuando el test termina sin haber convergido, el resultado se marca visualmente como **estimación provisional** y el texto lo indica explícitamente. Esto puede ocurrir por límite práctico de preguntas o por baja utilidad marginal de las preguntas restantes. Un diagnóstico provisional puede aparecer cuando el patrón de respuestas es inusual (por ejemplo, varios fallos iniciales seguidos de muchos aciertos), situación en la que la incertidumbre es genuinamente alta y sería incorrecto presentar el resultado como definitivo.
+Cuando el test termina sin haber convergido, el resultado se marca visualmente como **estimación provisional** y el texto lo indica explícitamente. Esto puede ocurrir por límite práctico de preguntas o por baja utilidad marginal de las preguntas restantes. Un diagnóstico provisional puede aparecer también cuando el patrón de respuestas es inusual, situación en la que la incertidumbre es genuinamente alta y sería incorrecto presentar el resultado como definitivo.
 
 ---
 
@@ -233,6 +283,7 @@ bayes-test/
 ├── index.html                                    Interfaz y lógica del sistema bayesiano
 ├── questions.js                                  Banco de 90 preguntas
 ├── ayuda.html                                    Guía de uso y fundamentos técnicos
+├── validacion.html                               Herramienta de validación Monte Carlo (para el creador)
 ├── scripts/
 │   └── simulate.js                               Simulaciones reproducibles del motor adaptativo
 └── README.md                                     Este documento

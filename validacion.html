@@ -189,6 +189,45 @@
     html[data-theme="dark"] .site-footer { background: #020617; color: #64748b; }
     html[data-theme="dark"] .site-footer a { color: #818cf8; }
 
+    /* ─── Optimization tool ─── */
+    .opt-rec {
+      background: rgba(16,185,129,0.10);
+      border: 1.5px solid var(--success);
+      border-radius: 0.65rem;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .opt-rec-label {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--success); margin-bottom: 0.35rem;
+    }
+    .opt-rec-values { display: flex; flex-wrap: wrap; gap: 1.1rem; font-size: 0.9rem; }
+    .opt-rec-values strong { color: var(--primary); }
+    .opt-rec-criterion { font-size: 0.75rem; color: var(--muted); margin-top: 0.4rem; }
+
+    .opt-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-bottom: 0.6rem; table-layout: fixed; }
+    .opt-table th {
+      padding: 0.3rem 0.2rem; font-size: 0.72rem; font-weight: 600;
+      color: var(--muted); text-align: center; border-bottom: 1px solid var(--border);
+    }
+    .opt-table thead tr:first-child th { font-size: 0.68rem; color: var(--muted); padding-bottom: 0.1rem; }
+    .opt-table tbody th {
+      text-align: left; font-weight: 700; font-size: 0.78rem; padding-left: 0.4rem;
+      background: var(--bg); border-right: 1px solid var(--border); white-space: nowrap;
+    }
+    .opt-table td {
+      padding: 0.28rem 0.15rem; text-align: center;
+      border: 1px solid rgba(0,0,0,0.07); cursor: default;
+    }
+    .opt-acc { font-weight: 700; font-size: 0.78rem; }
+    .opt-nq  { font-size: 0.66rem; color: rgba(0,0,0,0.45); margin-top: 0.05rem; }
+    .opt-cell-cur { outline: 2px solid var(--primary); outline-offset: -2px; }
+    .opt-cell-best { outline: 2.5px solid #10b981; outline-offset: -2px; }
+
+    html[data-theme="dark"] .opt-rec { background: rgba(16,185,129,0.08); }
+    html[data-theme="dark"] .opt-nq  { color: rgba(255,255,255,0.35); }
+    html[data-theme="dark"] .opt-table td { border-color: rgba(255,255,255,0.06); }
+
     /* ─── Footer ─── */
     .site-footer {
       background: #1e293b;
@@ -255,6 +294,25 @@
     </div>
   </div>
 
+  <div class="container">
+    <div class="card">
+      <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.4rem">Optimización automática de parámetros</h2>
+      <p class="intro-text">
+        Evalúa las 32 combinaciones de <strong>preguntas diagnósticas por nivel</strong> (1–4) ×
+        <strong>mínimo de preguntas antes de converger</strong> (diagMin×3 hasta diagMin×3+7)
+        y recomienda automáticamente la configuración con mayor exactitud y, entre las equivalentes,
+        la que genera sesiones más cortas.
+      </p>
+      <div style="text-align:center;margin-bottom:0.5rem">
+        <button id="opt-btn" class="btn btn-primary" onclick="runOptimization()">
+          ▶ Buscar parámetros óptimos
+        </button>
+      </div>
+      <p id="opt-status" style="text-align:center;font-size:0.8rem;color:var(--muted);min-height:1.3em"></p>
+      <div id="opt-results"></div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     © <a href="https://bilateria.org" target="_blank" rel="noopener">Juan José de Haro</a>
     <span class="sep">·</span>
@@ -272,7 +330,7 @@
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const LEVELS     = ['Básico', 'Medio', 'Avanzado'];
-const MIN_Q      = 6;
+const MIN_Q      = 8;
 const MIN_Q_IG   = 12;
 const IG_MIN     = 0.015;
 const MAX_Q_HARD = 20;
@@ -284,7 +342,7 @@ const NIVELES = [
   { nombre: 'Medio',    theta:  0            },
   { nombre: 'Avanzado', theta:  THETA_SCALE  },
 ];
-const SENSIBILIDAD = 2.0;
+const SENSIBILIDAD = 1.5;
 
 // ─── IRT 3PL ──────────────────────────────────────────────────────────────────
 
@@ -307,7 +365,7 @@ function entropy(dist) {
   return -dist.reduce((h, p) => h + (p > 1e-10 ? p * Math.log2(p) : 0), 0);
 }
 
-const H_STOP = entropy([0.85, 0.075, 0.075]);
+const H_STOP = entropy([0.80, 0.10, 0.10]);
 
 function gananciaInformacion(priores, pregunta) {
   const veros    = generarVerosimilitudes(pregunta);
@@ -351,10 +409,15 @@ function bestInformationGain(priorDist, counts = null) {
   return pool.length ? bestGain : 0;
 }
 
-function shouldStop(priorDist, answeredCount) {
+function convergenceReached(priorDist, answeredCount) {
   return answeredCount >= MIN_Q &&
     entropy(priorDist) < H_STOP &&
-    Math.max(...priorDist) >= 0.85;
+    Math.max(...priorDist) >= 0.80;
+}
+
+function shouldStop(priorDist, answeredCount) {
+  return convergenceReached(priorDist, answeredCount) &&
+    [0, 1, 2].every(d => history.filter(h => h.diff === d).length >= 2);
 }
 
 function shouldStopLowGain(priorDist, answeredCount, counts = null) {
@@ -368,7 +431,7 @@ function computeMaxQ() {
   function maxAdditional(priorDist, counts, answeredCount) {
     if (
       answeredCount >= MAX_Q_HARD ||
-      shouldStop(priorDist, answeredCount) ||
+      convergenceReached(priorDist, answeredCount) ||
       shouldStopLowGain(priorDist, answeredCount, counts) ||
       counts.every(c => c === 0)
     ) return 0;
@@ -461,6 +524,31 @@ function selectNext() {
   const catCount = {};
   history.forEach(h => { catCount[h.cat] = (catCount[h.cat] || 0) + 1; });
 
+  // FASE DIAGNÓSTICA: garantizar al menos 2 preguntas de cada nivel de dificultad
+  const diffCount = {};
+  history.forEach(h => { diffCount[h.diff] = (diffCount[h.diff] || 0) + 1; });
+  if ([0, 1, 2].some(d => (diffCount[d] || 0) < 2)) {
+    let bestPool = null, bestMax = -Infinity;
+    for (const d of [0, 1, 2]) {
+      if ((diffCount[d] || 0) >= 2) continue;
+      const pool = available.filter(q => q.diff === d);
+      if (!pool.length) continue;
+      const maxG = Math.max(...pool.map(q => gananciaInformacion(prior, q)));
+      if (maxG > bestMax) { bestMax = maxG; bestPool = pool; }
+    }
+    if (bestPool) {
+      const gains = bestPool.map(q => gananciaInformacion(prior, q));
+      const maxG  = Math.max(...gains);
+      const cands = bestPool.filter((_, i) => gains[i] >= maxG - 1e-9);
+      const ws    = cands.map(q => 1 / (1 + (catCount[q.cat] || 0)));
+      const tot   = ws.reduce((s, w) => s + w, 0);
+      let r = Math.random() * tot;
+      for (let i = 0; i < cands.length; i++) { r -= ws[i]; if (r <= 0) return cands[i]; }
+      return cands[cands.length - 1];
+    }
+  }
+
+  // FASE ADAPTATIVA: selección pura por ganancia de información esperada
   const gains    = available.map(q => gananciaInformacion(prior, q));
   const maxGain  = Math.max(...gains);
   const candidates = available.filter((_, i) => gains[i] >= maxGain - 1e-9);
@@ -558,6 +646,189 @@ function runAndShow() {
     btn.disabled = false;
     btn.textContent = '↺ Volver a ejecutar';
   }, 50);
+}
+
+// ─── PARAMETER OPTIMIZATION ───────────────────────────────────────────────────
+
+function simulateSessionParam(thetaTrue, diagMin, minQ) {
+  let pr = [1/3, 1/3, 1/3];
+  const asked = new Set();
+  const hist  = [];
+  let n = 0;
+
+  const convOK  = (p, c) => c >= minQ && entropy(p) < H_STOP && Math.max(...p) >= 0.80;
+  const stopOK  = (p, c) => convOK(p, c) && [0,1,2].every(d => hist.filter(h => h.diff === d).length >= diagMin);
+  const lowGain = (p, c) => {
+    if (c < Math.max(MIN_Q_IG, minQ)) return false;
+    const av = QUESTIONS.filter(q => !asked.has(q.id));
+    return !av.length || Math.max(...av.map(q => gananciaInformacion(p, q))) < IG_MIN;
+  };
+
+  const pick = () => {
+    const av = shuffle(QUESTIONS.filter(q => !asked.has(q.id)));
+    if (!av.length) return null;
+    const catCnt = {}, diffCnt = {};
+    hist.forEach(h => { catCnt[h.cat] = (catCnt[h.cat]||0)+1; diffCnt[h.diff] = (diffCnt[h.diff]||0)+1; });
+
+    if ([0,1,2].some(d => (diffCnt[d]||0) < diagMin)) {
+      let bPool = null, bMax = -Infinity;
+      for (const d of [0,1,2]) {
+        if ((diffCnt[d]||0) >= diagMin) continue;
+        const pool = av.filter(q => q.diff === d);
+        if (!pool.length) continue;
+        const mG = Math.max(...pool.map(q => gananciaInformacion(pr, q)));
+        if (mG > bMax) { bMax = mG; bPool = pool; }
+      }
+      if (bPool) {
+        const gs = bPool.map(q => gananciaInformacion(pr, q));
+        const mG = Math.max(...gs);
+        const cs = bPool.filter((_,i) => gs[i] >= mG-1e-9);
+        const ws = cs.map(q => 1/(1+(catCnt[q.cat]||0)));
+        const tot = ws.reduce((s,w)=>s+w,0);
+        let r = Math.random()*tot;
+        for (let i=0;i<cs.length;i++){r-=ws[i];if(r<=0)return cs[i];}
+        return cs[cs.length-1];
+      }
+    }
+    const gs = av.map(q => gananciaInformacion(pr, q));
+    const mG = Math.max(...gs);
+    const cs = av.filter((_,i) => gs[i] >= mG-1e-9);
+    const ws = cs.map(q => 1/(1+(catCnt[q.cat]||0)));
+    const tot = ws.reduce((s,w)=>s+w,0);
+    let r = Math.random()*tot;
+    for (let i=0;i<cs.length;i++){r-=ws[i];if(r<=0)return cs[i];}
+    return cs[cs.length-1];
+  };
+
+  while (!stopOK(pr, n) && !lowGain(pr, n) && n < MAX_Q) {
+    const q = pick();
+    if (!q) break;
+    const isC = Math.random() < probabilidadAcierto(thetaTrue, q.dificultad, q.opciones);
+    asked.add(q.id);
+    const veros = generarVerosimilitudes(q);
+    const raw = pr.map((p,i) => p*(isC ? veros[i].acierto : veros[i].fallo));
+    const sum = raw.reduce((a,b)=>a+b,0);
+    pr = raw.map(v => v/sum);
+    hist.push({ cat: q.cat, diff: q.diff, dificultad: q.dificultad, opciones: q.opciones, correct: isC });
+    n++;
+  }
+  return { lvl: pr.indexOf(Math.max(...pr)), nq: n };
+}
+
+function runSweepPoint(diagMin, minQ, N) {
+  let hits = 0, nqTotal = 0;
+  for (let truth = 0; truth < 3; truth++) {
+    for (let s = 0; s < N; s++) {
+      const { lvl, nq } = simulateSessionParam(NIVELES[truth].theta, diagMin, minQ);
+      if (lvl === truth) hits++;
+      nqTotal += nq;
+    }
+  }
+  return { accuracy: 100 * hits / (N * 3), nq: nqTotal / (N * 3) };
+}
+
+function renderOptResults(data) {
+  const maxAcc = Math.max(...data.map(d => d.accuracy));
+  const minAcc = Math.min(...data.map(d => d.accuracy));
+  const range  = Math.max(maxAcc - minAcc, 0.5);
+
+  // Criterion: within 1 % of max accuracy → pick shortest session, then lowest diagMin
+  const topAcc = maxAcc - 1.0;
+  const optimal = data
+    .filter(d => d.accuracy >= topAcc)
+    .reduce((b, d) => d.nq < b.nq || (d.nq === b.nq && d.diagMin < b.diagMin) ? d : b);
+
+  // Cell background: interpolate from pale yellow to pale green
+  function cellBg(acc) {
+    const t = (acc - minAcc) / range;
+    const h = Math.round(45 + t * 100);  // 45° (yellow) → 145° (green)
+    const s = 65;
+    const l = Math.round(90 - t * 22);   // 90% → 68%
+    return `hsl(${h},${s}%,${l}%)`;
+  }
+
+  // Recommendation block
+  let html = `
+    <div class="opt-rec">
+      <div class="opt-rec-label">Configuración recomendada</div>
+      <div class="opt-rec-values">
+        <span>Diagnósticas/nivel: <strong>${optimal.diagMin}</strong></span>
+        <span>MIN_Q: <strong>${optimal.minQ}</strong></span>
+        <span>Exactitud: <strong>${optimal.accuracy.toFixed(1)}%</strong></span>
+        <span>Preguntas medias: <strong>${optimal.nq.toFixed(1)}</strong></span>
+      </div>
+      <div class="opt-rec-criterion">
+        Criterio: mayor exactitud; entre combinaciones dentro del 1% del máximo (${maxAcc.toFixed(1)}%), la sesión más corta.
+      </div>
+    </div>`;
+
+  // Heatmap table — rows: diagMin 1–4 · columns: extra 0–7
+  html += `
+    <table class="opt-table">
+      <thead>
+        <tr>
+          <th rowspan="2" style="text-align:left;padding-left:0.4rem">Diagn.<br>/nivel</th>
+          <th colspan="8" style="border-bottom:none;padding-bottom:0">Preguntas extra sobre mínimo diagnóstico (MIN_Q = diagMin×3 + extra)</th>
+        </tr>
+        <tr>${[0,1,2,3,4,5,6,7].map(e=>`<th>+${e}</th>`).join('')}</tr>
+      </thead>
+      <tbody>`;
+
+  for (const dm of [1,2,3,4]) {
+    html += `<tr><th>${dm}</th>`;
+    for (let extra = 0; extra <= 7; extra++) {
+      const mq = dm * 3 + extra;
+      const pt = data.find(d => d.diagMin === dm && d.minQ === mq);
+      const isOpt = pt === optimal;
+      const isCur = dm === 2 && mq === MIN_Q;
+      const cls   = isOpt ? 'opt-cell-best' : isCur ? 'opt-cell-cur' : '';
+      const bg    = cellBg(pt.accuracy);
+      html += `<td class="${cls}" style="background:${bg}" title="diagMin=${dm} · MIN_Q=${mq}">
+        <div class="opt-acc">${pt.accuracy.toFixed(1)}%</div>
+        <div class="opt-nq">${pt.nq.toFixed(1)}p · ${mq}q</div>
+      </td>`;
+    }
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table>
+    <p class="mc-note">
+      Verde más intenso = mayor exactitud ·
+      <span style="outline:2.5px solid #10b981;outline-offset:1px;padding:0 3px">verde</span> = recomendado ·
+      <span style="outline:2px solid var(--primary);outline-offset:1px;padding:0 3px">azul</span> = configuración actual (diagMin=2, MIN_Q=${MIN_Q}) ·
+      cada celda: exactitud y media de preguntas por sesión.
+    </p>`;
+
+  document.getElementById('opt-results').innerHTML = html;
+}
+
+async function runOptimization() {
+  const btn    = document.getElementById('opt-btn');
+  const status = document.getElementById('opt-status');
+  const N = 400;
+  const TOTAL = 32;
+
+  btn.disabled = true;
+  document.getElementById('opt-results').innerHTML = '';
+
+  const data = [];
+  let done = 0;
+
+  for (const dm of [1, 2, 3, 4]) {
+    for (let extra = 0; extra <= 7; extra++) {
+      done++;
+      status.textContent = `Calculando… ${done}/${TOTAL} combinaciones`;
+      await new Promise(r => setTimeout(r, 0));
+      const mq = dm * 3 + extra;
+      const pt = runSweepPoint(dm, mq, N);
+      data.push({ diagMin: dm, minQ: mq, ...pt });
+    }
+  }
+
+  renderOptResults(data);
+  status.textContent = `Listo · ${N} simulaciones/nivel · ${TOTAL} combinaciones evaluadas`;
+  btn.disabled = false;
+  btn.textContent = '↺ Repetir optimización';
 }
 
 // ─── THEME ────────────────────────────────────────────────────────────────────

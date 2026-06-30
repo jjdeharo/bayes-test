@@ -793,7 +793,7 @@ const DIFF_LABELS = ['Fácil', 'Media', 'Difícil'];
 const DIFF_BADGE_CLASSES = ['badge-easy', 'badge-medium', 'badge-hard'];
 const LEVEL_DOT_CLASSES  = ['dot-basic', 'dot-medium', 'dot-advanced'];
 const LEVEL_BIG_CLASSES  = ['lb-basic', 'lb-medium', 'lb-advanced'];
-const MIN_Q = 6;
+const MIN_Q = 8;
 const MIN_Q_IG = 12;
 const IG_MIN = 0.015;
 const MAX_Q_HARD = 20;
@@ -807,7 +807,7 @@ const NIVELES = [
   { nombre: 'Medio',    theta:  0            },
   { nombre: 'Avanzado', theta:  THETA_SCALE  },
 ];
-const SENSIBILIDAD = 2.0;
+const SENSIBILIDAD = 1.5;
 
 // ─── IRT 3PL ──────────────────────────────────────────────────────────────────
 
@@ -881,10 +881,15 @@ const QUESTION_GROUPS = Object.values(QUESTIONS.reduce((groups, q) => {
   return groups;
 }, {}));
 
-function shouldStop(priorDist, answeredCount) {
+function convergenceReached(priorDist, answeredCount) {
   return answeredCount >= MIN_Q &&
     entropy(priorDist) < H_STOP &&
     Math.max(...priorDist) >= 0.85;
+}
+
+function shouldStop(priorDist, answeredCount) {
+  return convergenceReached(priorDist, answeredCount) &&
+    [0, 1, 2].every(d => history.filter(h => h.diff === d).length >= 2);
 }
 
 function shouldStopLowGain(priorDist, answeredCount, counts = null) {
@@ -936,7 +941,7 @@ function computeMaxQ() {
   function maxAdditional(priorDist, counts, answeredCount) {
     if (
       answeredCount >= MAX_Q_HARD ||
-      shouldStop(priorDist, answeredCount) ||
+      convergenceReached(priorDist, answeredCount) ||
       shouldStopLowGain(priorDist, answeredCount, counts) ||
       counts.every(c => c === 0)
     ) return 0;
@@ -1044,14 +1049,36 @@ function selectNext() {
   const catCount = {};
   history.forEach(h => { catCount[h.cat] = (catCount[h.cat] || 0) + 1; });
 
-  // Ganancia de información para cada pregunta disponible
-  const gains  = available.map(q => gananciaInformacion(prior, q));
+  // FASE DIAGNÓSTICA: garantizar al menos 2 preguntas de cada nivel de dificultad
+  // antes de pasar a selección adaptativa pura. De los niveles con menos de 2, elige
+  // el que tenga mayor ganancia máxima de información con el prior actual.
+  const diffCount = {};
+  history.forEach(h => { diffCount[h.diff] = (diffCount[h.diff] || 0) + 1; });
+  if ([0, 1, 2].some(d => (diffCount[d] || 0) < 2)) {
+    let bestPool = null, bestMax = -Infinity;
+    for (const d of [0, 1, 2]) {
+      if ((diffCount[d] || 0) >= 2) continue;
+      const pool = available.filter(q => q.diff === d);
+      if (!pool.length) continue;
+      const maxG = Math.max(...pool.map(q => gananciaInformacion(prior, q)));
+      if (maxG > bestMax) { bestMax = maxG; bestPool = pool; }
+    }
+    if (bestPool) {
+      const gains = bestPool.map(q => gananciaInformacion(prior, q));
+      const maxG  = Math.max(...gains);
+      const cands = bestPool.filter((_, i) => gains[i] >= maxG - 1e-9);
+      const ws    = cands.map(q => 1 / (1 + (catCount[q.cat] || 0)));
+      const tot   = ws.reduce((s, w) => s + w, 0);
+      let r = Math.random() * tot;
+      for (let i = 0; i < cands.length; i++) { r -= ws[i]; if (r <= 0) return cands[i]; }
+      return cands[cands.length - 1];
+    }
+  }
+
+  // FASE ADAPTATIVA: selección pura por ganancia de información esperada
+  const gains   = available.map(q => gananciaInformacion(prior, q));
   const maxGain = Math.max(...gains);
-
-  // Candidatas: todas las que están dentro del margen del máximo
   const candidates = available.filter((_, i) => gains[i] >= maxGain - 1e-9);
-
-  // Selección aleatoria ponderada: las categorías menos vistas tienen más peso
   const weights = candidates.map(q => 1 / (1 + (catCount[q.cat] || 0)));
   const total   = weights.reduce((s, w) => s + w, 0);
   let r = Math.random() * total;

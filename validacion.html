@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validación Monte Carlo · Test Adaptativo Bayesiano</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #818cf8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { overflow-x: clip; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+    }
+
+    .app-frame {
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto;
+      border-radius: 1.25rem;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      padding: 1.25rem 2rem;
+      text-align: center;
+      position: relative;
+    }
+    .header h1 { font-size: 1.4rem; font-weight: 700; }
+    .header p  { font-size: 0.85rem; opacity: 0.85; margin-top: 0.2rem; }
+
+    .back-link {
+      position: absolute;
+      top: 50%;
+      left: 0.9rem;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      white-space: nowrap;
+    }
+    .back-link:hover { color: white; }
+
+    .container { padding: 1.25rem 1.5rem; }
+
+    .card {
+      background: var(--card);
+      border-radius: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 14px rgba(0,0,0,0.06);
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 2rem;
+      border-radius: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(79,70,229,0.4);
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .intro-text {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 1.2rem;
+    }
+    .intro-text strong { color: var(--text); }
+
+    #run-btn-wrapper { text-align: center; margin: 0.5rem 0 0.25rem; }
+
+    /* ── Monte Carlo results ── */
+    .mc-plain {
+      background: var(--bg);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 0.75rem 0.95rem;
+      margin-bottom: 0.9rem;
+      font-size: 0.83rem;
+      line-height: 1.6;
+    }
+    .mc-plain strong { color: var(--primary); }
+    .mc-plain p { margin: 0 0 0.5rem; }
+    .mc-plain p:last-child { margin-bottom: 0; }
+    .mc-demo {
+      background: #fffbeb;
+      border-left: 3px solid #f59e0b;
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 0.75rem 0.95rem;
+      margin-bottom: 1.1rem;
+      font-size: 0.83rem;
+      line-height: 1.6;
+      color: #92400e;
+    }
+    .mc-demo strong { color: #b45309; }
+    .mc-desc, .mc-note { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+    .mc-desc { margin-bottom: 0.7rem; margin-top: 1rem; }
+    .mc-note { margin-top: 0.7rem; font-style: italic; }
+    .mc-acc { font-size: 0.9rem; margin-top: 0.75rem; }
+    .mc-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .mc-table th, .mc-table td {
+      padding: 0.45rem 0.5rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .mc-table thead th { color: var(--muted); font-weight: 600; font-size: 0.76rem; }
+    .mc-table tbody th { text-align: left; font-weight: 600; }
+    .mc-cell { color: var(--muted); }
+    .mc-hit { color: var(--primary); font-weight: 700; background: rgba(79,70,229,0.08); }
+
+    /* ─── Theme switcher ── */
+    .theme-switcher {
+      position: absolute;
+      top: 50%;
+      right: 0.85rem;
+      transform: translateY(-50%);
+      display: flex;
+      background: rgba(255,255,255,0.14);
+      border-radius: 0.5rem;
+      padding: 0.2rem;
+    }
+    .theme-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem 0.4rem;
+      border-radius: 0.35rem;
+      font-size: 0.95rem;
+      line-height: 1;
+      color: rgba(255,255,255,0.7);
+      transition: background 0.15s, color 0.15s;
+    }
+    .theme-btn.active  { background: rgba(255,255,255,0.28); color: #fff; }
+    .theme-btn:hover:not(.active) { background: rgba(255,255,255,0.18); color: #fff; }
+
+    /* ─── Dark mode ─── */
+    html[data-theme="dark"] {
+      --primary: #818cf8;
+      --primary-light: #a5b4fc;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+    html[data-theme="dark"] body { background: var(--bg); }
+    html[data-theme="dark"] .mc-demo { background: #2a2010; color: #fcd9a0; }
+    html[data-theme="dark"] .mc-demo strong { color: #fbbf24; }
+    html[data-theme="dark"] .site-footer { background: #020617; color: #64748b; }
+    html[data-theme="dark"] .site-footer a { color: #818cf8; }
+
+    /* ─── Footer ─── */
+    .site-footer {
+      background: #1e293b;
+      color: #cbd5e1;
+      font-size: 0.78rem;
+      padding: 1.1rem 1.5rem;
+      text-align: center;
+      line-height: 1.8;
+    }
+    .site-footer a { color: #a5b4fc; text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; }
+    .site-footer .sep { margin: 0 0.5rem; opacity: 0.4; }
+  </style>
+  <script>
+    (function(){var t=localStorage.getItem('bayes-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);if(d)document.documentElement.setAttribute('data-theme','dark');})();
+  </script>
+</head>
+<body>
+
+<div class="app-frame">
+
+  <div class="header">
+    <a class="back-link" href="index.html">← Volver al test</a>
+    <h1>Validación Monte Carlo</h1>
+    <p>Herramienta del creador · Test Adaptativo Bayesiano</p>
+    <div class="theme-switcher">
+      <button class="theme-btn" data-theme="system" onclick="setTheme('system')" title="Seguir tema del sistema">🖥</button>
+      <button class="theme-btn" data-theme="light"  onclick="setTheme('light')"  title="Tema claro">☀️</button>
+      <button class="theme-btn" data-theme="dark"   onclick="setTheme('dark')"   title="Tema oscuro">🌙</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+
+      <div class="mc-demo">
+        ⚠️ <strong>Esta herramienta es para el creador del test, no para el alumnado.</strong>
+        Permite comprobar el diseño del banco de preguntas antes de distribuirlo.
+        No debe incluirse en el material que recibe el alumno.
+      </div>
+
+      <p class="intro-text">
+        La validación genera <strong>respondentes sintéticos</strong> situados en el θ de cada nivel
+        (Básico, Medio, Avanzado) y les aplica el test completo, reutilizando la misma
+        selección adaptativa y el mismo criterio de parada que usa el test real.
+        Con ello construye una <strong>matriz de confusión teórica</strong> que indica
+        con qué fiabilidad el banco de preguntas separa los tres niveles.
+      </p>
+      <p class="intro-text">
+        Es fiabilidad <em>bajo el modelo</em>: los respondentes se generan a partir del propio
+        modelo IRT, por lo que mide la coherencia interna del diseño, no su validez empírica.
+        Si ni siquiera respondentes ideales situados en el θ de cada nivel se distinguen bien,
+        el banco no discrimina esos niveles. Para validez real se necesitan datos de alumnado.
+      </p>
+
+      <div id="run-btn-wrapper">
+        <button class="btn btn-primary" onclick="runAndShow()">
+          ▶ Ejecutar validación (2 000 simulaciones/nivel)
+        </button>
+      </div>
+
+      <div id="mc-results"></div>
+
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    © <a href="https://bilateria.org" target="_blank" rel="noopener">Juan José de Haro</a>
+    <span class="sep">·</span>
+    Contenido: <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
+    <span class="sep">·</span>
+    Código: <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL-3.0</a>
+    <span class="sep">·</span>
+    <a href="https://jjdeharo.github.io/recursos-adaptativos/">Recursos adaptativos bayesianos</a>
+  </footer>
+
+</div><!-- /app-frame -->
+
+<script src="questions.js"></script>
+<script>
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+
+const LEVELS     = ['Básico', 'Medio', 'Avanzado'];
+const MIN_Q      = 6;
+const MIN_Q_IG   = 12;
+const IG_MIN     = 0.015;
+const MAX_Q_HARD = 20;
+
+const B_MAX       = Math.max(...QUESTIONS.map(q => Math.abs(q.dificultad)));
+const THETA_SCALE = B_MAX * 2;
+const NIVELES = [
+  { nombre: 'Básico',   theta: -THETA_SCALE },
+  { nombre: 'Medio',    theta:  0            },
+  { nombre: 'Avanzado', theta:  THETA_SCALE  },
+];
+const SENSIBILIDAD = 1.5;
+
+// ─── IRT 3PL ──────────────────────────────────────────────────────────────────
+
+function probabilidadAcierto(theta, dificultad, opciones, sensibilidad = SENSIBILIDAD) {
+  const c = opciones && opciones > 0 ? 1 / opciones : 0;
+  const logistica = 1 / (1 + Math.exp(-sensibilidad * (theta - dificultad)));
+  return c + (1 - c) * logistica;
+}
+
+function generarVerosimilitudes(pregunta) {
+  return NIVELES.map(nivel => {
+    const pAcierto = probabilidadAcierto(nivel.theta, pregunta.dificultad, pregunta.opciones);
+    return { nivel: nivel.nombre, acierto: pAcierto, fallo: 1 - pAcierto };
+  });
+}
+
+// ─── INFORMATION THEORY ───────────────────────────────────────────────────────
+
+function entropy(dist) {
+  return -dist.reduce((h, p) => h + (p > 1e-10 ? p * Math.log2(p) : 0), 0);
+}
+
+const H_STOP = entropy([0.80, 0.10, 0.10]);
+
+function gananciaInformacion(priores, pregunta) {
+  const veros    = generarVerosimilitudes(pregunta);
+  const pAcierto = priores.reduce((s, p, i) => s + p * veros[i].acierto, 0);
+  const pFallo   = 1 - pAcierto;
+  const rawA  = priores.map((p, i) => p * veros[i].acierto);
+  const rawF  = priores.map((p, i) => p * veros[i].fallo);
+  const sA    = rawA.reduce((a, b) => a + b, 0);
+  const sF    = rawF.reduce((a, b) => a + b, 0);
+  const postA = rawA.map(v => v / sA);
+  const postF = rawF.map(v => v / sF);
+  return entropy(priores) - (pAcierto * entropy(postA) + pFallo * entropy(postF));
+}
+
+// ─── QUESTION GROUPS (minimax) ────────────────────────────────────────────────
+
+const QUESTION_GROUPS = Object.values(QUESTIONS.reduce((groups, q) => {
+  const key = `${q.diff}|${q.dificultad}|${q.opciones}`;
+  if (!groups[key]) {
+    groups[key] = { diff: q.diff, dificultad: q.dificultad, opciones: q.opciones, count: 0 };
+  }
+  groups[key].count++;
+  return groups;
+}, {}));
+
+function posteriorAfter(priorDist, pregunta, isCorrect) {
+  const veros = generarVerosimilitudes(pregunta);
+  const raw = priorDist.map((p, i) => p * (isCorrect ? veros[i].acierto : veros[i].fallo));
+  const sum = raw.reduce((a, b) => a + b, 0);
+  return raw.map(v => v / sum);
+}
+
+function bestInformationGain(priorDist, counts = null) {
+  let bestGain = -Infinity;
+  const pool = counts
+    ? QUESTION_GROUPS.filter((_, i) => counts[i] > 0)
+    : QUESTIONS.filter(q => !askedIds.has(q.id));
+  for (const question of pool) {
+    bestGain = Math.max(bestGain, gananciaInformacion(priorDist, question));
+  }
+  return pool.length ? bestGain : 0;
+}
+
+function shouldStop(priorDist, answeredCount) {
+  return answeredCount >= MIN_Q &&
+    entropy(priorDist) < H_STOP &&
+    Math.max(...priorDist) >= 0.80;
+}
+
+function shouldStopLowGain(priorDist, answeredCount, counts = null) {
+  return answeredCount >= MIN_Q_IG && bestInformationGain(priorDist, counts) < IG_MIN;
+}
+
+function computeMaxQ() {
+  const cache = new Map();
+  const EPS = 1e-9;
+
+  function maxAdditional(priorDist, counts, answeredCount) {
+    if (
+      answeredCount >= MAX_Q_HARD ||
+      shouldStop(priorDist, answeredCount) ||
+      shouldStopLowGain(priorDist, answeredCount, counts) ||
+      counts.every(c => c === 0)
+    ) return 0;
+
+    const key = [
+      answeredCount,
+      counts.join(','),
+      priorDist.map(p => p.toPrecision(12)).join(','),
+    ].join('|');
+    if (cache.has(key)) return cache.get(key);
+
+    let bestGain = -Infinity;
+    let bestGroupIndexes = [];
+    for (let i = 0; i < QUESTION_GROUPS.length; i++) {
+      if (counts[i] <= 0) continue;
+      const gain = gananciaInformacion(priorDist, QUESTION_GROUPS[i]);
+      if (gain > bestGain + EPS) { bestGain = gain; bestGroupIndexes = [i]; }
+      else if (gain >= bestGain - EPS) { bestGroupIndexes.push(i); }
+    }
+
+    let worst = 0;
+    for (const groupIndex of bestGroupIndexes) {
+      const nextCounts = [...counts];
+      nextCounts[groupIndex]--;
+      const pregunta = QUESTION_GROUPS[groupIndex];
+      for (const isCorrect of [true, false]) {
+        const nextPrior = posteriorAfter(priorDist, pregunta, isCorrect);
+        worst = Math.max(worst, 1 + maxAdditional(nextPrior, nextCounts, answeredCount + 1));
+      }
+    }
+
+    cache.set(key, worst);
+    return worst;
+  }
+
+  const uniform = [1/3, 1/3, 1/3];
+  const initialCounts = QUESTION_GROUPS.map(g => g.count);
+  const firstGroupIndexes = QUESTION_GROUPS
+    .map((g, i) => g.diff === 1 && g.count > 0 ? i : -1)
+    .filter(i => i >= 0);
+  const possibleFirstIndexes = firstGroupIndexes.length
+    ? firstGroupIndexes
+    : QUESTION_GROUPS.map((g, i) => g.count > 0 ? i : -1).filter(i => i >= 0);
+
+  let maxQ = 0;
+  for (const groupIndex of possibleFirstIndexes) {
+    const countsAfterFirst = [...initialCounts];
+    countsAfterFirst[groupIndex]--;
+    const firstQuestion = QUESTION_GROUPS[groupIndex];
+    for (const firstCorrect of [true, false]) {
+      const afterFirst = posteriorAfter(uniform, firstQuestion, firstCorrect);
+      maxQ = Math.max(maxQ, 1 + maxAdditional(afterFirst, countsAfterFirst, 1));
+    }
+  }
+  return maxQ;
+}
+
+const MAX_Q = Math.min(computeMaxQ(), MAX_Q_HARD);
+
+// ─── STATE (session-scoped dentro de cada simulación) ─────────────────────────
+
+let prior, askedIds, history, answered;
+
+// ─── BAYES ────────────────────────────────────────────────────────────────────
+
+function updatePrior(isCorrect, veros) {
+  const raw = prior.map((p, i) => p * (isCorrect ? veros[i].acierto : veros[i].fallo));
+  const sum = raw.reduce((a, b) => a + b, 0);
+  prior = raw.map(v => v / sum);
+}
+
+function bestLevel() {
+  return prior.indexOf(Math.max(...prior));
+}
+
+// ─── QUESTION SELECTION ───────────────────────────────────────────────────────
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function selectNext() {
+  const available = shuffle(QUESTIONS.filter(q => !askedIds.has(q.id)));
+  if (!available.length) return null;
+
+  const catCount = {};
+  history.forEach(h => { catCount[h.cat] = (catCount[h.cat] || 0) + 1; });
+
+  const gains    = available.map(q => gananciaInformacion(prior, q));
+  const maxGain  = Math.max(...gains);
+  const candidates = available.filter((_, i) => gains[i] >= maxGain - 1e-9);
+  const weights  = candidates.map(q => 1 / (1 + (catCount[q.cat] || 0)));
+  const total    = weights.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < candidates.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
+
+// ─── MONTE CARLO ──────────────────────────────────────────────────────────────
+
+function simulateSession(thetaTrue) {
+  prior    = [1/3, 1/3, 1/3];
+  askedIds = new Set();
+  history  = [];
+  answered = 0;
+
+  while (!(shouldStop(prior, answered) || shouldStopLowGain(prior, answered) || answered >= MAX_Q)) {
+    const q = selectNext();
+    if (!q) break;
+    const p = probabilidadAcierto(thetaTrue, q.dificultad, q.opciones);
+    const isCorrect = Math.random() < p;
+    askedIds.add(q.id);
+    updatePrior(isCorrect, generarVerosimilitudes(q));
+    history.push({ cat: q.cat, diff: q.diff, dificultad: q.dificultad, opciones: q.opciones, correct: isCorrect });
+    answered++;
+  }
+  return { lvl: bestLevel(), nq: answered };
+}
+
+function runMonteCarlo(nPerLevel) {
+  const matrix = [[0,0,0],[0,0,0],[0,0,0]];
+  const nqSum  = [0, 0, 0];
+  for (let truth = 0; truth < 3; truth++) {
+    for (let s = 0; s < nPerLevel; s++) {
+      const { lvl, nq } = simulateSession(NIVELES[truth].theta);
+      matrix[truth][lvl]++;
+      nqSum[truth] += nq;
+    }
+  }
+  return { matrix, nq: nqSum.map(t => t / nPerLevel), nPerLevel };
+}
+
+// ─── UI ───────────────────────────────────────────────────────────────────────
+
+function runAndShow() {
+  const nPerLevel = 2000;
+  const btn = document.querySelector('#run-btn-wrapper button');
+  btn.disabled = true;
+  btn.textContent = 'Calculando… (puede tardar unos segundos)';
+
+  const results = document.getElementById('mc-results');
+  results.innerHTML =
+    '<p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-top:1rem">' +
+    'Simulando ' + nPerLevel.toLocaleString('es') + ' respondentes por nivel…</p>';
+
+  setTimeout(() => {
+    const { matrix, nq } = runMonteCarlo(nPerLevel);
+    const total     = nPerLevel * 3;
+    const aciertos  = matrix.reduce((s, row, i) => s + row[i], 0);
+    const exactitud = Math.round(100 * aciertos / total);
+
+    const rows = matrix.map((row, i) => {
+      const sum   = row.reduce((a, b) => a + b, 0) || 1;
+      const cells = row.map((c, j) =>
+        `<td class="mc-cell${i === j ? ' mc-hit' : ''}">${Math.round(100 * c / sum)}%</td>`
+      ).join('');
+      return `<tr><th>${LEVELS[i]}</th>${cells}<td>${nq[i].toFixed(1)}</td></tr>`;
+    }).join('');
+
+    results.innerHTML =
+      `<div class="mc-plain" style="margin-top:1.1rem">` +
+        `<p><strong>¿Qué estás viendo?</strong> El ordenador ha generado ${nPerLevel.toLocaleString('es')} estudiantes ` +
+        `sintéticos de cada nivel —básico, medio y avanzado— situados exactamente en el θ de ese nivel, ` +
+        `y les ha aplicado el test con la misma selección adaptativa y el mismo criterio de parada que al alumnado real. ` +
+        `La tabla muestra con qué frecuencia el test acierta el nivel verdadero.</p>` +
+        `<p><strong>Cómo leer la tabla:</strong> cada fila es el nivel <em>real</em> del respondente; ` +
+        `cada columna, el nivel <em>diagnosticado</em>. Las celdas <strong>resaltadas</strong> ` +
+        `(diagonal) son los aciertos; las demás muestran las confusiones.</p>` +
+      `</div>` +
+      `<p class="mc-desc">${nPerLevel.toLocaleString('es')} respondentes simulados por nivel · ` +
+      `Filas: nivel real · Columnas: nivel diagnosticado · Diagonal resaltada: aciertos.</p>` +
+      `<table class="mc-table">` +
+        `<thead><tr><th></th><th>${LEVELS[0]}</th><th>${LEVELS[1]}</th><th>${LEVELS[2]}</th><th>Nº preg.</th></tr></thead>` +
+        `<tbody>${rows}</tbody>` +
+      `</table>` +
+      `<p class="mc-acc">Exactitud global del diseño: <strong>${exactitud}%</strong></p>` +
+      `<p class="mc-note">Fiabilidad <em>bajo el modelo</em>: los respondentes se generan desde el propio modelo IRT, ` +
+      `situados en el θ exacto de cada nivel. Mide si el banco discrimina los niveles, no la validez empírica real.</p>`;
+
+    btn.disabled = false;
+    btn.textContent = '↺ Volver a ejecutar';
+  }, 50);
+}
+
+// ─── THEME ────────────────────────────────────────────────────────────────────
+
+function applyTheme(mode) {
+  const dark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  dark
+    ? document.documentElement.setAttribute('data-theme', 'dark')
+    : document.documentElement.removeAttribute('data-theme');
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === mode));
+}
+
+function setTheme(mode) {
+  localStorage.setItem('bayes-theme', mode);
+  applyTheme(mode);
+}
+
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  applyTheme(localStorage.getItem('bayes-theme') || 'system');
+});
+
+applyTheme(localStorage.getItem('bayes-theme') || 'system');
+</script>
+
+</body>
+</html>

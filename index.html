@@ -354,6 +354,25 @@
     }
     .interp-block p { font-size: 0.875rem; color: var(--text); line-height: 1.7; margin: 0; }
     .interp-provisional { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 0.6rem 0.9rem; border-radius: 0 0.5rem 0.5rem 0; }
+    .interp-tech {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-top: 0.55rem;
+      padding-top: 0.45rem;
+      border-top: 1px solid var(--border);
+    }
+    .interp-tech strong { font-style: normal; color: var(--text); }
+    .interp-tech code {
+      font-family: 'Consolas', 'Fira Mono', monospace;
+      font-size: 0.78rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.3rem;
+      padding: 0.1rem 0.4rem;
+      display: inline-block;
+      margin-top: 0.3rem;
+    }
 
     /* HISTORY TABLE */
     .hist-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -1303,19 +1322,27 @@ function interpretacionPedagogica() {
   //    para ESTE alumno, más allá de cuán seguro esté el modelo de sí mismo.
   const pf = personFit(history, lvl);
   if (pf) {
+    const pfTech =
+      `<strong>Índice l<sub>z</sub> (person-fit · Drasgow et al., 1985):</strong> ` +
+      `compara la log-verosimilitud observada del patrón de respuestas con la que se esperaría ` +
+      `si el alumno fuese realmente del nivel estimado. Estandarizado, sigue aproximadamente ` +
+      `una distribución N(0,1): valores próximos a 0 indican coherencia; valores muy negativos ` +
+      `(orientativamente &lt; ${PF_THRESHOLD.toFixed(1)}) señalan un patrón aberrante ` +
+      `—por ejemplo, acertar preguntas difíciles y fallar fáciles—, lo que puede indicar ` +
+      `descuidos, azar o que el modelo no se ajusta bien a este alumno concreto.` +
+      `<br><code>l<sub>z</sub> = ${pf.lz.toFixed(2)} · N = ${pf.n} preguntas · umbral: &lt; ${PF_THRESHOLD.toFixed(1)}</code>`;
+
     bloques.push({
       label: 'Coherencia del patrón (person-fit)',
       provisional: pf.atipico,
       text: pf.atipico
-        ? `El patrón de respuestas es atípico para el nivel estimado ` +
-          `(índice lz = ${pf.lz.toFixed(2)}, por debajo del umbral ${PF_THRESHOLD.toFixed(1)}). ` +
-          `Suele indicar respuestas incoherentes con la dificultad —por ejemplo, acertar preguntas ` +
-          `difíciles y fallar fáciles—, descuidos o azar. Aunque el modelo asigne una probabilidad ` +
-          `alta, conviene tomar este diagnóstico con cautela: la clasificación podría no ser fiable ` +
-          `para este alumno.`
-        : `El patrón de respuestas es coherente con el nivel estimado ` +
-          `(índice lz = ${pf.lz.toFixed(2)}, dentro de lo esperable). El alumno acierta y falla en ` +
-          `línea con la dificultad de cada pregunta, lo que refuerza la fiabilidad del diagnóstico.`,
+        ? `El patrón de respuestas es atípico para el nivel estimado. Suele indicar respuestas ` +
+          `incoherentes con la dificultad —por ejemplo, acertar preguntas difíciles y fallar ` +
+          `fáciles—, descuidos o azar. Aunque el modelo asigne una probabilidad alta, conviene ` +
+          `tomar este diagnóstico con cautela: la clasificación podría no ser fiable para este alumno.`
+        : `El patrón de respuestas es coherente con el nivel estimado. El alumno acierta y falla ` +
+          `en línea con la dificultad de cada pregunta, lo que refuerza la fiabilidad del diagnóstico.`,
+      tech: pfTech,
     });
   }
 
@@ -1347,6 +1374,7 @@ function showResults() {
     <div class="interp-block${b.provisional ? ' interp-provisional' : ''}">
       <div class="interp-label">${b.label}</div>
       <p>${b.text}</p>
+      ${b.tech ? `<p class="interp-tech">${b.tech}</p>` : ''}
     </div>`).join('');
 
   // Historial de preguntas

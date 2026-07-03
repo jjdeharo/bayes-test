@@ -564,6 +564,30 @@ function selectNext() {
 
 // ─── MONTE CARLO ──────────────────────────────────────────────────────────────
 
+// Person-fit (lz de Drasgow/Levine-Williams), como en index.html: mide si el
+// patrón de respuestas es coherente con el nivel diagnosticado. Aquí sirve
+// para estimar la tasa de falsas alarmas con respondentes coherentes.
+const PF_THRESHOLD = -2.0;
+
+function personFit(hist, lvl) {
+  const theta = NIVELES[lvl].theta;
+  let lObs = 0, lExp = 0, varL = 0, n = 0;
+  for (const h of hist) {
+    if (h.dificultad == null || h.opciones == null) continue;
+    const p = probabilidadAcierto(theta, h.dificultad, h.opciones);
+    const q = 1 - p;
+    if (p <= 1e-6 || q <= 1e-6) continue;
+    const logit = Math.log(p) - Math.log(q);
+    lObs += h.correct ? Math.log(p) : Math.log(q);
+    lExp += p * Math.log(p) + q * Math.log(q);
+    varL += p * q * logit * logit;
+    n++;
+  }
+  if (n < MIN_Q || varL < 1e-9) return null;
+  const lz = (lObs - lExp) / Math.sqrt(varL);
+  return { lz, n, atipico: lz < PF_THRESHOLD };
+}
+
 function simulateSession(thetaTrue) {
   prior    = [1/3, 1/3, 1/3];
   askedIds = new Set();
@@ -580,20 +604,29 @@ function simulateSession(thetaTrue) {
     history.push({ cat: q.cat, diff: q.diff, dificultad: q.dificultad, opciones: q.opciones, correct: isCorrect });
     answered++;
   }
-  return { lvl: bestLevel(), nq: answered };
+  const lvl = bestLevel();
+  const pf  = personFit(history, lvl);
+  return { lvl, nq: answered, aviso: !!(pf && pf.atipico) };
 }
 
 function runMonteCarlo(nPerLevel) {
   const matrix = [[0,0,0],[0,0,0],[0,0,0]];
   const nqSum  = [0, 0, 0];
+  const avisos = [0, 0, 0];
   for (let truth = 0; truth < 3; truth++) {
     for (let s = 0; s < nPerLevel; s++) {
-      const { lvl, nq } = simulateSession(NIVELES[truth].theta);
+      const { lvl, nq, aviso } = simulateSession(NIVELES[truth].theta);
       matrix[truth][lvl]++;
       nqSum[truth] += nq;
+      if (aviso) avisos[truth]++;
     }
   }
-  return { matrix, nq: nqSum.map(t => t / nPerLevel), nPerLevel };
+  return {
+    matrix,
+    nq: nqSum.map(t => t / nPerLevel),
+    avisos: avisos.map(a => 100 * a / nPerLevel),
+    nPerLevel
+  };
 }
 
 // ─── UI ───────────────────────────────────────────────────────────────────────
@@ -610,7 +643,7 @@ function runAndShow() {
     'Simulando ' + nPerLevel.toLocaleString('es') + ' respondentes por nivel…</p>';
 
   setTimeout(() => {
-    const { matrix, nq } = runMonteCarlo(nPerLevel);
+    const { matrix, nq, avisos } = runMonteCarlo(nPerLevel);
     const total     = nPerLevel * 3;
     const aciertos  = matrix.reduce((s, row, i) => s + row[i], 0);
     const exactitud = Math.round(100 * aciertos / total);
@@ -620,7 +653,7 @@ function runAndShow() {
       const cells = row.map((c, j) =>
         `<td class="mc-cell${i === j ? ' mc-hit' : ''}">${Math.round(100 * c / sum)}%</td>`
       ).join('');
-      return `<tr><th>${LEVELS[i]}</th>${cells}<td>${nq[i].toFixed(1)}</td></tr>`;
+      return `<tr><th>${LEVELS[i]}</th>${cells}<td>${nq[i].toFixed(1)}</td><td>${avisos[i].toFixed(1)}%</td></tr>`;
     }).join('');
 
     results.innerHTML =
@@ -636,12 +669,14 @@ function runAndShow() {
       `<p class="mc-desc">${nPerLevel.toLocaleString('es')} respondentes simulados por nivel · ` +
       `Filas: nivel real · Columnas: nivel diagnosticado · Diagonal resaltada: aciertos.</p>` +
       `<table class="mc-table">` +
-        `<thead><tr><th></th><th>${LEVELS[0]}</th><th>${LEVELS[1]}</th><th>${LEVELS[2]}</th><th>Nº preg.</th></tr></thead>` +
+        `<thead><tr><th></th><th>${LEVELS[0]}</th><th>${LEVELS[1]}</th><th>${LEVELS[2]}</th><th>Nº preg.</th><th>Avisos l<sub>z</sub></th></tr></thead>` +
         `<tbody>${rows}</tbody>` +
       `</table>` +
       `<p class="mc-acc">Exactitud global del diseño: <strong>${exactitud}%</strong></p>` +
       `<p class="mc-note">Fiabilidad <em>bajo el modelo</em>: los respondentes se generan desde el propio modelo IRT, ` +
-      `situados en el θ exacto de cada nivel. Mide si el banco discrimina los niveles, no la validez empírica real.</p>`;
+      `situados en el θ exacto de cada nivel. Mide si el banco discrimina los niveles, no la validez empírica real. ` +
+      `«Avisos l<sub>z</sub>»: sesiones en las que saltaría el aviso de person-fit (l<sub>z</sub> &lt; −2); ` +
+      `con respondentes coherentes con el modelo debe ser bajo (son falsas alarmas).</p>`;
 
     btn.disabled = false;
     btn.textContent = '↺ Volver a ejecutar';

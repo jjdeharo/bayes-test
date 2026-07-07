@@ -59,20 +59,20 @@ Donde:
 
 - $\theta_i$ es el valor numérico del nivel $H_i$: Básico $= -2$, Medio $= 0$, Avanzado $= 2$
 - $b_q$ es la dificultad de la pregunta $q$: Fácil $= -1$, Media $= 0$, Difícil $= 1$
-- $a = 1{,}5$ es el parámetro de discriminación (controla la pendiente de la curva)
+- $a$ es el parámetro de discriminación (controla la pendiente de la curva). No se fija directamente: se deriva de una discriminación efectiva objetivo $a_{\text{ef}} = 1{,}25$ y del suelo de azar $c_q$ de la pregunta, mediante $a = a_{\text{ef}} / (1 - c_q)$, para que todas las preguntas discriminen igual con independencia del número de opciones. Para 4 opciones ($c_q = 0{,}25$), $a \approx 1{,}67$
 - $c_q = \tfrac{1}{m_q}$ es el suelo de acierto por azar ($m_q$ = número de opciones; $c_q = 0{,}25$ para 4 opciones)
 
 > **Invariante de diseño:** el rango de $\theta$ debe ser estrictamente mayor que el rango de $b$. Cuando $\theta_{\max} = b_{\max}$, la curva IRT devuelve exactamente $(1+c_q)/2$ para ese par (punto de inflexión), y la ganancia de información del algoritmo adaptativo se iguala entre tipos de pregunta, impidiendo que las preguntas extremas sean seleccionadas. El sistema calcula automáticamente $\theta = \pm\,2\cdot b_{\max}$ a partir del banco de preguntas para garantizar esta separación.
 
 Si la respuesta es **incorrecta**, la verosimilitud usada es el complementario: $P(\text{fallo} \mid H_i, q) = 1 - P(\text{acierto} \mid H_i, q)$.
 
-Los valores resultantes para preguntas de 4 opciones ($c = 0{,}25$, $a = 1{,}5$) son:
+Los valores resultantes para preguntas de 4 opciones ($c = 0{,}25$, $a \approx 1{,}67$) son:
 
 |                  | Básico ($\theta=-2$) | Medio ($\theta=0$) | Avanzado ($\theta=2$) |
 |------------------|:--------------------:|:------------------:|:---------------------:|
-| Fácil ($b=-1$)   |       38,7 %         |      86,3 %        |       99,2 %          |
-| Media ($b=0$)    |       28,6 %         |      62,5 %        |       96,4 %          |
-| Difícil ($b=1$)  |       25,8 %         |      38,7 %        |       86,3 %          |
+| Fácil ($b=-1$)   |       36,9 %         |      88,1 %        |       99,5 %          |
+| Media ($b=0$)    |       27,6 %         |      62,5 %        |       97,4 %          |
+| Difícil ($b=1$)  |       25,5 %         |      36,9 %        |       88,1 %          |
 
 Cada pregunta lleva sus propios parámetros `dificultad` ($b_q$) y `opciones` ($m_q$), por lo que sus verosimilitudes se computan individualmente y no dependen de ninguna tabla global.
 
@@ -80,27 +80,27 @@ La corrección por azar $c_q$ garantiza que ningún alumno tenga una probabilida
 
 ### La actualización bayesiana paso a paso
 
-> **Resumen sin fórmulas:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 63,5 % de confianza que el alumno es de nivel Básico.
+> **Resumen sin fórmulas:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 64,4 % de confianza que el alumno es de nivel Básico.
 
 Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media ($b_q = 0$, $m_q = 4$). Con el modelo IRT ($\theta = -2, 0, 2$) las verosimilitudes del fallo son:
 
-$$P(\text{fallo} \mid \text{Media}, \text{Básico}) = 1 - 0{,}286 = 0{,}714$$
+$$P(\text{fallo} \mid \text{Media}, \text{Básico}) = 1 - 0{,}276 = 0{,}724$$
 $$P(\text{fallo} \mid \text{Media}, \text{Medio}) = 1 - 0{,}625 = 0{,}375$$
-$$P(\text{fallo} \mid \text{Media}, \text{Avanzado}) = 1 - 0{,}964 = 0{,}036$$
+$$P(\text{fallo} \mid \text{Media}, \text{Avanzado}) = 1 - 0{,}974 = 0{,}026$$
 
 **Productos con el prior** $\left(\frac{1}{3}\right)$:
 
-$$\text{Básico:} \quad 0{,}714 \times \tfrac{1}{3} = 0{,}238 \qquad \text{Medio:} \quad 0{,}375 \times \tfrac{1}{3} = 0{,}125 \qquad \text{Avanzado:} \quad 0{,}036 \times \tfrac{1}{3} = 0{,}012$$
+$$\text{Básico:} \quad 0{,}724 \times \tfrac{1}{3} = 0{,}241 \qquad \text{Medio:} \quad 0{,}375 \times \tfrac{1}{3} = 0{,}125 \qquad \text{Avanzado:} \quad 0{,}026 \times \tfrac{1}{3} = 0{,}009$$
 
-**Normalización** — suma total: $0{,}238 + 0{,}125 + 0{,}012 = 0{,}375$
+**Normalización** — suma total: $0{,}241 + 0{,}125 + 0{,}009 = 0{,}375$
 
 **Posterior:**
 
-$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}238}{0{,}375} \approx 63{,}5\%$$
+$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}241}{0{,}375} \approx 64{,}4\%$$
 $$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}125}{0{,}375} \approx 33{,}3\%$$
-$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}012}{0{,}375} \approx 3{,}2\%$$
+$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}009}{0{,}375} \approx 2{,}3\%$$
 
-Tras un solo fallo en una pregunta media, el sistema estima con un 63,5 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta.
+Tras un solo fallo en una pregunta media, el sistema estima con un 64,4 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta.
 
 ### Convergencia
 

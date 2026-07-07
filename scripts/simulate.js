@@ -22,7 +22,9 @@ const NIVELES = [
   { nombre: 'Medio', theta: 0 },
   { nombre: 'Avanzado', theta: THETA_SCALE },
 ];
-const SENSIBILIDAD = 1.5;
+// Discriminación efectiva objetivo: a = A_EF / (1 - c) se deriva por pregunta
+// según su suelo de azar c (ver documentación del método, §4.4).
+const A_EF = 1.25;
 
 function parseArgs(argv) {
   const options = {
@@ -75,19 +77,20 @@ function lcg(seed) {
   return () => ((state = (1664525 * state + 1013904223) >>> 0) / 2 ** 32);
 }
 
-function probabilidadAcierto(theta, dificultad, opciones, sensibilidad = SENSIBILIDAD) {
+function probabilidadAcierto(theta, dificultad, opciones, aEf = A_EF) {
   const c = opciones && opciones > 0 ? 1 / opciones : 0;
-  const logistica = 1 / (1 + Math.exp(-sensibilidad * (theta - dificultad)));
+  const a = aEf / (1 - c);
+  const logistica = 1 / (1 + Math.exp(-a * (theta - dificultad)));
   return c + (1 - c) * logistica;
 }
 
-function generarVerosimilitudes(pregunta, niveles = NIVELES, sensibilidad = SENSIBILIDAD) {
+function generarVerosimilitudes(pregunta, niveles = NIVELES, aEf = A_EF) {
   return niveles.map(nivel => {
     const acierto = probabilidadAcierto(
       nivel.theta,
       pregunta.dificultad,
       pregunta.opciones,
-      sensibilidad
+      aEf
     );
     return { nivel: nivel.nombre, acierto, fallo: 1 - acierto };
   });

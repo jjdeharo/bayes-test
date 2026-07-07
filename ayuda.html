@@ -218,7 +218,7 @@ html[data-theme="dark"] td{color:var(--text)}
     <ul class="param-list">
       <li><span class="param-key" id="pk-theta"></span>habilidad asociada al nivel i</li>
       <li><span class="param-key" id="pk-bq"></span>dificultad de la pregunta: −1 (fácil), 0 (media), +1 (difícil)</li>
-      <li><span class="param-key" id="pk-a"></span>discriminación — pendiente de la curva logística (a = 1,5)</li>
+      <li><span class="param-key" id="pk-a"></span>discriminación — pendiente de la curva logística. Se deriva de una discriminación efectiva objetivo (a_ef = 1,25) y del suelo de azar de la pregunta: a = a_ef / (1 − c). Para 4 opciones (c = 0,25), a ≈ 1,67</li>
       <li><span class="param-key" id="pk-c"></span>probabilidad mínima de acierto por azar: 0,25 (4 opciones)</li>
     </ul>
     <p>Los valores de θ se calculan automáticamente como el doble del rango de dificultades del banco, para que ninguna dificultad coincida con un nivel extremo en el punto de inflexión logístico.</p>

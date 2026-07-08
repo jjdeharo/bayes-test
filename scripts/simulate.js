@@ -15,12 +15,15 @@ const IG_MIN = 0.015;
 const MAX_Q_HARD = 20;
 const LEVELS = ['Básico', 'Medio', 'Avanzado'];
 const DIFF_LABELS = ['Fácil', 'Media', 'Difícil'];
-const B_MAX = Math.max(...QUESTIONS.map(q => Math.abs(q.dificultad)));
-const THETA_SCALE = B_MAX * 2;
+// Escala θ fija (v2.0): θ_max = n - 1, espaciado 2. Las dificultades se sitúan
+// en la mitad central [-θ_max/2, +θ_max/2] y se recortan (clamp) a ese rango.
+const N_NIVELES = 3;
+const THETA_MAX = N_NIVELES - 1;
+const B_CLAMP = THETA_MAX / 2;
 const NIVELES = [
-  { nombre: 'Básico', theta: -THETA_SCALE },
+  { nombre: 'Básico', theta: -THETA_MAX },
   { nombre: 'Medio', theta: 0 },
-  { nombre: 'Avanzado', theta: THETA_SCALE },
+  { nombre: 'Avanzado', theta: THETA_MAX },
 ];
 // Discriminación efectiva objetivo: a = A_EF / (1 - c) se deriva por pregunta
 // según su suelo de azar c (ver documentación del método, §4.4).
@@ -80,7 +83,8 @@ function lcg(seed) {
 function probabilidadAcierto(theta, dificultad, opciones, aEf = A_EF) {
   const c = opciones && opciones > 0 ? 1 / opciones : 0;
   const a = aEf / (1 - c);
-  const logistica = 1 / (1 + Math.exp(-a * (theta - dificultad)));
+  const b = Math.max(-B_CLAMP, Math.min(B_CLAMP, dificultad));  // v2.0: dificultad dentro de la escala
+  const logistica = 1 / (1 + Math.exp(-a * (theta - b)));
   return c + (1 - c) * logistica;
 }
 

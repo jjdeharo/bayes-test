@@ -798,14 +798,18 @@ const MIN_Q_IG = 12;
 const IG_MIN = 0.015;
 const MAX_Q_HARD = 20;
 
-// θ se calcula automáticamente: rango doble al de b para que ninguna dificultad
-// coincida con un nivel extremo (invariante: max(θ) > max(b) siempre).
-const B_MAX = Math.max(...QUESTIONS.map(q => Math.abs(q.dificultad)));
-const THETA_SCALE = B_MAX * 2;
+// Escala θ fija (v2.0): depende solo del número de hipótesis, no del banco.
+// Con n niveles, θ_max = n - 1 y espaciado 2 entre niveles adyacentes. Las
+// dificultades se sitúan en la mitad central [-θ_max/2, +θ_max/2]; los valores
+// atípicos se recortan (clamp), de modo que una pregunta extrema no estira la
+// escala ni satura las verosimilitudes del resto (ver método, §8.3).
+const N_NIVELES = 3;
+const THETA_MAX = N_NIVELES - 1;   // = 2 con 3 niveles
+const B_CLAMP = THETA_MAX / 2;     // dificultades en [-1, +1]
 const NIVELES = [
-  { nombre: 'Básico',   theta: -THETA_SCALE },
-  { nombre: 'Medio',    theta:  0            },
-  { nombre: 'Avanzado', theta:  THETA_SCALE  },
+  { nombre: 'Básico',   theta: -THETA_MAX },
+  { nombre: 'Medio',    theta:  0         },
+  { nombre: 'Avanzado', theta:  THETA_MAX },
 ];
 // Discriminación efectiva objetivo: a = A_EF / (1 - c) se deriva por pregunta
 // según su suelo de azar c, para que todas discriminen igual con independencia
@@ -817,7 +821,8 @@ const A_EF = 1.25;
 function probabilidadAcierto(theta, dificultad, opciones, aEf = A_EF) {
   const c = opciones && opciones > 0 ? 1 / opciones : 0;
   const a = aEf / (1 - c);
-  const logistica = 1 / (1 + Math.exp(-a * (theta - dificultad)));
+  const b = Math.max(-B_CLAMP, Math.min(B_CLAMP, dificultad));  // v2.0: dificultad dentro de la escala
+  const logistica = 1 / (1 + Math.exp(-a * (theta - b)));
   return c + (1 - c) * logistica;
 }
 

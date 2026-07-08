@@ -221,7 +221,7 @@ html[data-theme="dark"] td{color:var(--text)}
       <li><span class="param-key" id="pk-a"></span>discriminación — pendiente de la curva logística. Se deriva de una discriminación efectiva objetivo (a_ef = 1,25) y del suelo de azar de la pregunta: a = a_ef / (1 − c). Para 4 opciones (c = 0,25), a ≈ 1,67</li>
       <li><span class="param-key" id="pk-c"></span>probabilidad mínima de acierto por azar: 0,25 (4 opciones)</li>
     </ul>
-    <p>Los valores de θ se calculan automáticamente como el doble del rango de dificultades del banco, para que ninguna dificultad coincida con un nivel extremo en el punto de inflexión logístico.</p>
+    <p>Los valores de θ son fijos y dependen solo del número de niveles (θ<sub>máx</sub> = n − 1, con espaciado 2): Básico = −2, Medio = 0, Avanzado = +2. Las dificultades se sitúan dentro de esa escala, en la mitad central [−1, +1], de modo que ninguna coincida con un nivel extremo en el punto de inflexión logístico; los valores atípicos se recortan a ese rango.</p>
   </div>
 
   <div class="card">
@@ -314,8 +314,8 @@ const ri = (id, latex) =>
     katex.renderToString(latex, { displayMode: false, throwOnError: false });
 
 // ── parámetros reales del motor ──────────────────────────────────────────────
-const B_MAX      = Math.max(...QUESTIONS.map(q => Math.abs(q.dificultad)));
-const THETA_MAX  = B_MAX * 2;
+const N_NIVELES  = 3;
+const THETA_MAX  = N_NIVELES - 1;   // escala fija (v2.0): θ_max = n - 1
 const H_STOP_VAL = -(0.85 * Math.log2(0.85)) - (0.15 * Math.log2(0.15 / 2));
 const H0_VAL     = Math.log2(3);
 

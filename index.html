@@ -940,6 +940,15 @@ function personFit(hist, lvl) {
   return { lz, n, atipico: lz < PF_THRESHOLD };
 }
 
+// Comprobación de coherencia EN VIVO (no solo al cierre, §"Validación y fiabilidad" /
+// hallazgo 3.2): si el patrón ya es atípico (lz < -2) el test se detiene un momento y
+// reconduce con tacto en lugar de seguir gastando banco. Con enfriamiento para no insistir.
+const PF_LIVE_COOLDOWN = 5;
+function livePausa() {
+  const pf = personFit(history, bestLevel());
+  return pf && pf.atipico && (answered - lastPauseAt) >= PF_LIVE_COOLDOWN;
+}
+
 function posteriorAfter(priorDist, pregunta, isCorrect) {
   const veros = generarVerosimilitudes(pregunta);
   const raw = priorDist.map((p, i) => p * (isCorrect ? veros[i].acierto : veros[i].fallo));
@@ -1021,7 +1030,7 @@ const MAX_Q = Math.min(MAX_Q_THEORETICAL, MAX_Q_HARD);
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-let prior, askedIds, currentQ, answered, correct, history, stopCause;
+let prior, askedIds, currentQ, answered, correct, history, stopCause, lastPauseAt;
 
 function resetState() {
   prior    = [1/3, 1/3, 1/3];
@@ -1031,6 +1040,7 @@ function resetState() {
   correct  = 0;
   history  = [];
   stopCause = null;
+  lastPauseAt = -99;
 }
 
 // ─── BAYES ────────────────────────────────────────────────────────────────────
@@ -1236,19 +1246,31 @@ function handleAnswer(chosen) {
   setProbBars('');
   updateLevelIndicator();
 
-  setTimeout(() => {
-    const certain = shouldStop(prior, answered);
-    const lowGain = shouldStopLowGain(prior, answered);
-    const hitMax  = answered >= MAX_Q;
-    if (certain || lowGain || hitMax) {
-      stopCause = certain ? 'certain' : lowGain ? 'low_gain' : 'max_q';
-      showResults();
-    } else {
-      const next = selectNext();
-      if (next) renderQuestion(next);
-      else showResults();
-    }
-  }, 1900);
+  const willStop = shouldStop(prior, answered) || shouldStopLowGain(prior, answered) || answered >= MAX_Q;
+  if (!willStop && livePausa()) {
+    lastPauseAt = answered;
+    const cb = document.createElement('div');
+    cb.className = 'feedback-banner';
+    cb.style.cssText = 'margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;display:block;flex-direction:column;align-items:flex-start';
+    cb.innerHTML = `<div style="line-height:1.5">🌿 <strong>Hagamos una pausa.</strong> Algunas respuestas no encajan del todo con tu nivel estimado —quizá por un despiste o por responder deprisa—. Respira, lee con calma la siguiente y tómate tu tiempo.</div><button style="margin-top:10px;padding:9px 16px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer" onclick="advanceAfterAnswer()">Continuar con calma →</button>`;
+    fa.appendChild(cb);
+  } else {
+    setTimeout(advanceAfterAnswer, 1900);
+  }
+}
+
+function advanceAfterAnswer() {
+  const certain = shouldStop(prior, answered);
+  const lowGain = shouldStopLowGain(prior, answered);
+  const hitMax  = answered >= MAX_Q;
+  if (certain || lowGain || hitMax) {
+    stopCause = certain ? 'certain' : lowGain ? 'low_gain' : 'max_q';
+    showResults();
+  } else {
+    const next = selectNext();
+    if (next) renderQuestion(next);
+    else showResults();
+  }
 }
 
 // ─── SCREENS ──────────────────────────────────────────────────────────────────

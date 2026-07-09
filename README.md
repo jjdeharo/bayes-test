@@ -206,7 +206,9 @@ El procedimiento genera respondentes sintéticos situados en el $\theta_i$ de ca
 
 $$C_{ij} = P(\text{diagnóstico} = H_j \mid \text{nivel verdadero} = H_i)$$
 
-La diagonal $C_{ii}$ es la tasa de acierto por nivel; los elementos fuera de la diagonal son las confusiones. Se informa también de la exactitud global, la longitud media del test por nivel y la tasa de **avisos de person-fit** ($l_z < -2$): con respondentes coherentes con el modelo debe ser baja, porque son falsas alarmas del aviso de coherencia del patrón.
+La diagonal $C_{ii}$ es la tasa de acierto por nivel; los elementos fuera de la diagonal son las confusiones. Se informa también de la exactitud global y **equilibrada** (media de las diagonales, para que un nivel mal separado no quede oculto tras dos que se recuperan bien), la longitud media del test por nivel, la tasa de **cierres provisionales** (sesiones que terminan sin alcanzar la confianza exigida) y la tasa de **avisos de person-fit** ($l_z < -2$): con respondentes coherentes con el modelo debe ser baja, porque son falsas alarmas del aviso de coherencia del patrón.
+
+La simulación usa una **semilla fija**, así que dos ejecuciones dan el mismo resultado. La herramienta **avisa** si algún nivel se recupera menos del `70 %` de las veces o si dos niveles se confunden de forma sistemática (`≥ 20 %`). Con el banco actual no hay avisos: exactitud equilibrada del `92.6 %` (93.4 / 88.9 / 95.5 % por nivel), sin cierres provisionales y con una media de 8.6 preguntas.
 
 **Límite esencial:** los respondentes se generan con el mismo modelo que los clasifica, de modo que no es validación empírica. Mide la coherencia interna y la separabilidad del diseño — si ni siquiera respondentes ideales situados en el $\theta$ de cada nivel se distinguen bien, el banco no discrimina esos niveles —, pero no garantiza que los $\theta_i$ y las dificultades $b_q$ correspondan a la realidad.
 

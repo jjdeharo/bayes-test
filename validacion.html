@@ -335,6 +335,24 @@ const MIN_Q_IG   = 12;
 const IG_MIN     = 0.015;
 const MAX_Q_HARD = 20;
 
+// Criterio orientativo de aceptación de la metodología: por debajo, el banco no separa
+// ese nivel. UMBRAL_CONFUSION marca la confusión sistemática entre dos niveles.
+const UMBRAL_ALERTA    = 0.70;
+const UMBRAL_CONFUSION = 0.20;
+
+/* Generador sembrado (mulberry32). Sin él, dos ejecuciones de la validación daban cifras
+   distintas: una comprobación del diseño, que puede decidir si el banco se publica, debe
+   ser reproducible. Sustituye a Math.random en toda esta herramienta. */
+const SEED = 20260709;
+let seedState = SEED;
+function rng() {
+  seedState |= 0;
+  seedState = (seedState + 0x6D2B79F5) | 0;
+  let t = Math.imul(seedState ^ (seedState >>> 15), 1 | seedState);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
 // Escala θ fija (v2.0): θ_max = n - 1, espaciado 2; dificultades recortadas a
 // la mitad central [-θ_max/2, +θ_max/2] (ver método, §8.3).
 const N_NIVELES   = 3;
@@ -520,7 +538,7 @@ function bestLevel() {
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -551,7 +569,7 @@ function selectNext() {
       const cands = bestPool.filter((_, i) => gains[i] >= maxG - 1e-9);
       const ws    = cands.map(q => 1 / (1 + (catCount[q.cat] || 0)));
       const tot   = ws.reduce((s, w) => s + w, 0);
-      let r = Math.random() * tot;
+      let r = rng() * tot;
       for (let i = 0; i < cands.length; i++) { r -= ws[i]; if (r <= 0) return cands[i]; }
       return cands[cands.length - 1];
     }
@@ -563,7 +581,7 @@ function selectNext() {
   const candidates = available.filter((_, i) => gains[i] >= maxGain - 1e-9);
   const weights  = candidates.map(q => 1 / (1 + (catCount[q.cat] || 0)));
   const total    = weights.reduce((s, w) => s + w, 0);
-  let r = Math.random() * total;
+  let r = rng() * total;
   for (let i = 0; i < candidates.length; i++) {
     r -= weights[i];
     if (r <= 0) return candidates[i];
@@ -607,7 +625,7 @@ function simulateSession(thetaTrue) {
     const q = selectNext();
     if (!q) break;
     const p = probabilidadAcierto(thetaTrue, q.dificultad, q.opciones);
-    const isCorrect = Math.random() < p;
+    const isCorrect = rng() < p;
     askedIds.add(q.id);
     updatePrior(isCorrect, generarVerosimilitudes(q));
     history.push({ cat: q.cat, diff: q.diff, dificultad: q.dificultad, opciones: q.opciones, correct: isCorrect });
@@ -615,25 +633,33 @@ function simulateSession(thetaTrue) {
   }
   const lvl = bestLevel();
   const pf  = personFit(history, lvl);
-  return { lvl, nq: answered, aviso: !!(pf && pf.atipico) };
+  // Cierre firme: se alcanzó la confianza exigida. Si se sale por el tope de preguntas o
+  // por ganancia mínima sin alcanzarla, el diagnóstico es provisional (el análogo del
+  // «indeterminado» en un modelo de niveles, donde siempre hay un MAP).
+  const firme = shouldStop(prior, answered);
+  return { lvl, nq: answered, aviso: !!(pf && pf.atipico), firme };
 }
 
 function runMonteCarlo(nPerLevel) {
+  seedState = SEED;   // misma semilla en cada ejecución: resultados reproducibles
   const matrix = [[0,0,0],[0,0,0],[0,0,0]];
   const nqSum  = [0, 0, 0];
   const avisos = [0, 0, 0];
+  const firmes = [0, 0, 0];
   for (let truth = 0; truth < 3; truth++) {
     for (let s = 0; s < nPerLevel; s++) {
-      const { lvl, nq, aviso } = simulateSession(NIVELES[truth].theta);
+      const { lvl, nq, aviso, firme } = simulateSession(NIVELES[truth].theta);
       matrix[truth][lvl]++;
       nqSum[truth] += nq;
       if (aviso) avisos[truth]++;
+      if (firme) firmes[truth]++;
     }
   }
   return {
     matrix,
     nq: nqSum.map(t => t / nPerLevel),
     avisos: avisos.map(a => 100 * a / nPerLevel),
+    provisionales: firmes.map(f => 100 * (1 - f / nPerLevel)),
     nPerLevel
   };
 }
@@ -652,17 +678,47 @@ function runAndShow() {
     'Simulando ' + nPerLevel.toLocaleString('es') + ' respondentes por nivel…</p>';
 
   setTimeout(() => {
-    const { matrix, nq, avisos } = runMonteCarlo(nPerLevel);
+    const { matrix, nq, avisos, provisionales } = runMonteCarlo(nPerLevel);
     const total     = nPerLevel * 3;
     const aciertos  = matrix.reduce((s, row, i) => s + row[i], 0);
     const exactitud = Math.round(100 * aciertos / total);
 
+    // Exactitud equilibrada: media de las diagonales, para que un nivel mal separado no
+    // quede oculto tras dos que se recuperan bien.
+    const diagonales = matrix.map((row, i) => row[i] / (row.reduce((a, b) => a + b, 0) || 1));
+    const equilibrada = 100 * diagonales.reduce((a, b) => a + b, 0) / 3;
+    const provisionalMedia = provisionales.reduce((a, b) => a + b, 0) / 3;
+    const nqMedia = nq.reduce((a, b) => a + b, 0) / 3;
+
+    const flojos = [], confusiones = [];
+    matrix.forEach((row, i) => {
+      const sum = row.reduce((a, b) => a + b, 0) || 1;
+      if (diagonales[i] < UMBRAL_ALERTA) {
+        flojos.push(`${LEVELS[i]} (${Math.round(100 * diagonales[i])}%)`);
+      }
+      row.forEach((c, j) => {
+        if (j !== i && c / sum >= UMBRAL_CONFUSION) {
+          confusiones.push(`${LEVELS[i]} → ${LEVELS[j]} (${Math.round(100 * c / sum)}%)`);
+        }
+      });
+    });
+
+    const alerta = (flojos.length || confusiones.length)
+      ? `<p class="mc-note" style="color:var(--danger);font-style:normal"><strong>Aviso:</strong> ` +
+        `el banco no separa bien todos los niveles bajo el propio modelo.` +
+        (flojos.length ? ` Por debajo del ${Math.round(100 * UMBRAL_ALERTA)}% de acierto: ${flojos.join('; ')}.` : '') +
+        (confusiones.length ? ` Confusión sistemática (≥ ${Math.round(100 * UMBRAL_CONFUSION)}%): ${confusiones.join('; ')}.` : '') +
+        ` Conviene añadir ítems que los discriminen, revisar dificultades, o declarar la limitación.</p>`
+      : `<p class="mc-note" style="font-style:normal"><strong>Sin avisos:</strong> todos los niveles se ` +
+        `recuperan por encima del ${Math.round(100 * UMBRAL_ALERTA)}% y no hay confusiones sistemáticas.</p>`;
+
     const rows = matrix.map((row, i) => {
       const sum   = row.reduce((a, b) => a + b, 0) || 1;
-      const cells = row.map((c, j) =>
-        `<td class="mc-cell${i === j ? ' mc-hit' : ''}">${Math.round(100 * c / sum)}%</td>`
-      ).join('');
-      return `<tr><th>${LEVELS[i]}</th>${cells}<td>${nq[i].toFixed(1)}</td><td>${avisos[i].toFixed(1)}%</td></tr>`;
+      const cells = row.map((c, j) => {
+        const flojo = i === j && diagonales[i] < UMBRAL_ALERTA;
+        return `<td class="mc-cell${i === j ? ' mc-hit' : ''}"${flojo ? ' style="color:var(--danger)"' : ''}>${Math.round(100 * c / sum)}%</td>`;
+      }).join('');
+      return `<tr><th>${LEVELS[i]}</th>${cells}<td>${nq[i].toFixed(1)}</td><td>${provisionales[i].toFixed(1)}%</td><td>${avisos[i].toFixed(1)}%</td></tr>`;
     }).join('');
 
     results.innerHTML =
@@ -678,11 +734,19 @@ function runAndShow() {
       `<p class="mc-desc">${nPerLevel.toLocaleString('es')} respondentes simulados por nivel · ` +
       `Filas: nivel real · Columnas: nivel diagnosticado · Diagonal resaltada: aciertos.</p>` +
       `<table class="mc-table">` +
-        `<thead><tr><th></th><th>${LEVELS[0]}</th><th>${LEVELS[1]}</th><th>${LEVELS[2]}</th><th>Nº preg.</th><th>Avisos l<sub>z</sub></th></tr></thead>` +
+        `<thead><tr><th></th><th>${LEVELS[0]}</th><th>${LEVELS[1]}</th><th>${LEVELS[2]}</th><th>Nº preg.</th><th>Provisionales</th><th>Avisos l<sub>z</sub></th></tr></thead>` +
         `<tbody>${rows}</tbody>` +
       `</table>` +
-      `<p class="mc-acc">Exactitud global del diseño: <strong>${exactitud}%</strong></p>` +
-      `<p class="mc-note">Fiabilidad <em>bajo el modelo</em>: los respondentes se generan desde el propio modelo IRT, ` +
+      `<p class="mc-acc">Exactitud global del diseño: <strong>${exactitud}%</strong> · ` +
+      `equilibrada: <strong>${equilibrada.toFixed(1)}%</strong> · ` +
+      `cierres provisionales: ${provisionalMedia.toFixed(1)}% · ` +
+      `longitud media: ${nqMedia.toFixed(1)} preguntas</p>` +
+      alerta +
+      `<p class="mc-note">«Exactitud equilibrada»: media de las diagonales, para que un nivel mal ` +
+      `separado no quede oculto tras dos que se recuperan bien. «Provisionales»: sesiones cerradas ` +
+      `sin alcanzar la confianza exigida (el análogo del «indeterminado» cuando siempre hay un nivel ganador). ` +
+      `La simulación usa semilla fija, así que dos ejecuciones dan el mismo resultado. ` +
+      `Fiabilidad <em>bajo el modelo</em>: los respondentes se generan desde el propio modelo IRT, ` +
       `situados en el θ exacto de cada nivel. Mide si el banco discrimina los niveles, no la validez empírica real. ` +
       `«Avisos l<sub>z</sub>»: sesiones en las que saltaría el aviso de person-fit (l<sub>z</sub> &lt; −2); ` +
       `con respondentes coherentes con el modelo debe ser bajo (son falsas alarmas).</p>`;
@@ -729,7 +793,7 @@ function simulateSessionParam(thetaTrue, diagMin, minQ) {
         const cs = bPool.filter((_,i) => gs[i] >= mG-1e-9);
         const ws = cs.map(q => 1/(1+(catCnt[q.cat]||0)));
         const tot = ws.reduce((s,w)=>s+w,0);
-        let r = Math.random()*tot;
+        let r = rng()*tot;
         for (let i=0;i<cs.length;i++){r-=ws[i];if(r<=0)return cs[i];}
         return cs[cs.length-1];
       }
@@ -739,7 +803,7 @@ function simulateSessionParam(thetaTrue, diagMin, minQ) {
     const cs = av.filter((_,i) => gs[i] >= mG-1e-9);
     const ws = cs.map(q => 1/(1+(catCnt[q.cat]||0)));
     const tot = ws.reduce((s,w)=>s+w,0);
-    let r = Math.random()*tot;
+    let r = rng()*tot;
     for (let i=0;i<cs.length;i++){r-=ws[i];if(r<=0)return cs[i];}
     return cs[cs.length-1];
   };
@@ -747,7 +811,7 @@ function simulateSessionParam(thetaTrue, diagMin, minQ) {
   while (!stopOK(pr, n) && !lowGain(pr, n) && n < MAX_Q) {
     const q = pick();
     if (!q) break;
-    const isC = Math.random() < probabilidadAcierto(thetaTrue, q.dificultad, q.opciones);
+    const isC = rng() < probabilidadAcierto(thetaTrue, q.dificultad, q.opciones);
     asked.add(q.id);
     const veros = generarVerosimilitudes(q);
     const raw = pr.map((p,i) => p*(isC ? veros[i].acierto : veros[i].fallo));

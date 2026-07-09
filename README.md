@@ -53,7 +53,7 @@ Este prior expresa ignorancia total: las tres hipótesis son igualmente plausibl
 
 Las verosimilitudes se calculan de forma dinámica para cada pregunta mediante la función logística IRT 3PL:
 
-$$P(\text{acierto} \mid H_i, q) = c_q + (1 - c_q) \cdot \frac{1}{1 + e^{-a(\theta_i - b_q)}}$$
+$$P(\text{acierto} \mid H_i, q) = \min\!\left(0{,}95,\; c_q + (1 - c_q) \cdot \frac{1}{1 + e^{-a(\theta_i - b_q)}}\right)$$
 
 Donde:
 
@@ -61,6 +61,7 @@ Donde:
 - $b_q$ es la dificultad de la pregunta $q$: Fácil $= -1$, Media $= 0$, Difícil $= 1$
 - $a$ es el parámetro de discriminación (controla la pendiente de la curva). No se fija directamente: se deriva de una discriminación efectiva objetivo $a_{\text{ef}} = 1{,}25$ y del suelo de azar $c_q$ de la pregunta, mediante $a = a_{\text{ef}} / (1 - c_q)$, para que todas las preguntas discriminen igual con independencia del número de opciones. Para 4 opciones ($c_q = 0{,}25$), $a \approx 1{,}67$
 - $c_q = \tfrac{1}{m_q}$ es el suelo de acierto por azar ($m_q$ = número de opciones; $c_q = 0{,}25$ para 4 opciones)
+- El **techo de dominio** $0{,}95$ modela el descuido (*slip*): ni el nivel máximo acierta con probabilidad 1 en los ítems fáciles. Sin él, un fallo en una pregunta fácil produciría una actualización casi determinista
 
 > **Invariante de diseño:** el rango de $\theta$ debe ser estrictamente mayor que el rango de $b$. Cuando $\theta_{\max} = b_{\max}$, la curva IRT devuelve exactamente $(1+c_q)/2$ para ese par (punto de inflexión), y la ganancia de información del algoritmo adaptativo se iguala entre tipos de pregunta, impidiendo que las preguntas extremas sean seleccionadas. La escala $\theta$ es **fija** y depende solo del número de niveles ($\theta_{\max} = n - 1$, con espaciado 2; para 3 niveles, $\theta \in \{-2, 0, +2\}$); las dificultades se sitúan en la mitad central $b_q \in [-\theta_{\max}/2, +\theta_{\max}/2]$ y los valores atípicos se recortan a ese intervalo, de modo que una pregunta extrema no estira la escala ni satura las verosimilitudes del resto del banco.
 
@@ -70,37 +71,39 @@ Los valores resultantes para preguntas de 4 opciones ($c = 0{,}25$, $a \approx 1
 
 |                  | Básico ($\theta=-2$) | Medio ($\theta=0$) | Avanzado ($\theta=2$) |
 |------------------|:--------------------:|:------------------:|:---------------------:|
-| Fácil ($b=-1$)   |       36,9 %         |      88,1 %        |       99,5 %          |
-| Media ($b=0$)    |       27,6 %         |      62,5 %        |       97,4 %          |
+| Fácil ($b=-1$)   |       36,9 %         |      88,1 %        |       95,0 %          |
+| Media ($b=0$)    |       27,6 %         |      62,5 %        |       95,0 %          |
 | Difícil ($b=1$)  |       25,5 %         |      36,9 %        |       88,1 %          |
 
-Cada pregunta lleva sus propios parámetros `dificultad` ($b_q$) y `opciones` ($m_q$), por lo que sus verosimilitudes se computan individualmente y no dependen de ninguna tabla global.
+Cada pregunta lleva sus propios parámetros `dificultad` ($b_q$) y `opciones` ($m_q$), por lo que sus verosimilitudes se computan individualmente y no dependen de ninguna tabla global. Las dos celdas de $95{,}0\,\%$ tocan el **techo de dominio**: el 3PL puro daría $99{,}5\,\%$ y $97{,}4\,\%$, pero el techo las recorta a $0{,}95$.
 
-La corrección por azar $c_q$ garantiza que ningún alumno tenga una probabilidad de acierto inferior a la que tendría respondiendo al azar, lo que hace los aciertos menos diagnósticos que los fallos: un fallo prueba ignorancia directamente, mientras que un acierto puede deberse a la suerte.
+La corrección por azar $c_q$ garantiza que ningún alumno tenga una probabilidad de acierto inferior a la que tendría respondiendo al azar, lo que hace los aciertos menos diagnósticos que los fallos: un fallo prueba ignorancia directamente, mientras que un acierto puede deberse a la suerte. Simétricamente, el techo de dominio $0{,}95$ evita que un acierto casi seguro se convierta en un fallo prácticamente imposible: garantiza $P(\text{fallo}) \ge 0{,}05$ para cualquier nivel, de modo que ningún fallo aislado produce una actualización determinista.
 
 ### La actualización bayesiana paso a paso
 
-> **Resumen sin fórmulas:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 64,4 % de confianza que el alumno es de nivel Básico.
+> **Resumen sin fórmulas:** este ejemplo muestra cómo un solo fallo en una pregunta media es suficiente para que el sistema pase de no saber nada (33 % para cada nivel) a estimar con un 63 % de confianza que el alumno es de nivel Básico.
 
 Supongamos que el sistema parte del prior uniforme y el alumno falla una pregunta media ($b_q = 0$, $m_q = 4$). Con el modelo IRT ($\theta = -2, 0, 2$) las verosimilitudes del fallo son:
 
 $$P(\text{fallo} \mid \text{Media}, \text{Básico}) = 1 - 0{,}276 = 0{,}724$$
 $$P(\text{fallo} \mid \text{Media}, \text{Medio}) = 1 - 0{,}625 = 0{,}375$$
-$$P(\text{fallo} \mid \text{Media}, \text{Avanzado}) = 1 - 0{,}974 = 0{,}026$$
+$$P(\text{fallo} \mid \text{Media}, \text{Avanzado}) = 1 - 0{,}950 = 0{,}050$$
+
+(La verosimilitud de acierto de Avanzado, $0{,}974$ por el 3PL puro, queda recortada por el techo de dominio a $0{,}950$, así que el fallo pasa a valer $0{,}050$ en vez de $0{,}026$.)
 
 **Productos con el prior** $\left(\frac{1}{3}\right)$:
 
-$$\text{Básico:} \quad 0{,}724 \times \tfrac{1}{3} = 0{,}241 \qquad \text{Medio:} \quad 0{,}375 \times \tfrac{1}{3} = 0{,}125 \qquad \text{Avanzado:} \quad 0{,}026 \times \tfrac{1}{3} = 0{,}009$$
+$$\text{Básico:} \quad 0{,}724 \times \tfrac{1}{3} = 0{,}241 \qquad \text{Medio:} \quad 0{,}375 \times \tfrac{1}{3} = 0{,}125 \qquad \text{Avanzado:} \quad 0{,}050 \times \tfrac{1}{3} = 0{,}017$$
 
-**Normalización** — suma total: $0{,}241 + 0{,}125 + 0{,}009 = 0{,}375$
+**Normalización** — suma total: $0{,}241 + 0{,}125 + 0{,}017 = 0{,}383$
 
 **Posterior:**
 
-$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}241}{0{,}375} \approx 64{,}4\%$$
-$$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}125}{0{,}375} \approx 33{,}3\%$$
-$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}009}{0{,}375} \approx 2{,}3\%$$
+$$P(\text{Básico} \mid \text{fallo media}) = \frac{0{,}241}{0{,}383} \approx 62{,}9\%$$
+$$P(\text{Medio} \mid \text{fallo media}) = \frac{0{,}125}{0{,}383} \approx 32{,}6\%$$
+$$P(\text{Avanzado} \mid \text{fallo media}) = \frac{0{,}017}{0{,}383} \approx 4{,}4\%$$
 
-Tras un solo fallo en una pregunta media, el sistema estima con un 64,4 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta.
+Tras un solo fallo en una pregunta media, el sistema estima con un 63 % de confianza que el alumno es de nivel Básico. Este posterior se convierte en el prior de la siguiente pregunta. Nótese que el techo de dominio hace el fallo algo menos concluyente (con el 3PL puro habría dado $\approx 64{,}4\,\%$): un acierto casi seguro de Avanzado ya no vuelve un fallo prácticamente imposible.
 
 ### Convergencia
 

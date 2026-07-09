@@ -327,7 +327,7 @@ rd('f-bayes',
   'P(H_i \\mid r) = \\dfrac{P(r \\mid H_i)\\cdot P(H_i)}{\\displaystyle\\sum_j P(r \\mid H_j)\\cdot P(H_j)}');
 
 rd('f-irt',
-  'P(\\text{acierto} \\mid H_i,\\,q) = c_q + \\dfrac{1-c_q}{1+e^{-a(\\theta_i - b_q)}}');
+  'P(\\text{acierto} \\mid H_i,\\,q) = \\min\\!\\left(0{,}95,\\; c_q + \\dfrac{1-c_q}{1+e^{-a(\\theta_i - b_q)}}\\right)');
 
 rd('f-ig',
   'IG(q) = H(\\mathbf{p}) - \\bigl[P(A)\\cdot H(\\mathbf{p}_{\\!A}) + P(F)\\cdot H(\\mathbf{p}_{\\!F})\\bigr]');

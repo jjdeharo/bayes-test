@@ -28,6 +28,8 @@ const NIVELES = [
 // Discriminación efectiva objetivo: a = A_EF / (1 - c) se deriva por pregunta
 // según su suelo de azar c (ver documentación del método, §4.4).
 const A_EF = 1.25;
+// Techo de dominio (slip): P(acierto) <= 0.95 aun en ítems fáciles (hallazgo 1.3).
+const P_MAX = 0.95;
 
 function parseArgs(argv) {
   const options = {
@@ -85,7 +87,7 @@ function probabilidadAcierto(theta, dificultad, opciones, aEf = A_EF) {
   const a = aEf / (1 - c);
   const b = Math.max(-B_CLAMP, Math.min(B_CLAMP, dificultad));  // v2.0: dificultad dentro de la escala
   const logistica = 1 / (1 + Math.exp(-a * (theta - b)));
-  return c + (1 - c) * logistica;
+  return Math.min(P_MAX, c + (1 - c) * logistica);
 }
 
 function generarVerosimilitudes(pregunta, niveles = NIVELES, aEf = A_EF) {
